@@ -1,0 +1,5 @@
+grant codeBase "file:/home/2014/zxu32/middleware_512" {
+    permission java.security.AllPermission;
+};
+
+

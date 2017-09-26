@@ -1,3 +1,6 @@
+package MidInterface;
+
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -132,8 +135,8 @@ public interface MiddleWare extends Remote
 
     /* reserveItinerary which books a set of flights, and possibly a car and a hotel at
 the final destination */
-    // public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
-    // throws RemoteException; 
+    public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
+    throws RemoteException; 
 
     			
 }

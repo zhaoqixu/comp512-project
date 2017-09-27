@@ -51,7 +51,7 @@ public class client
             // get a reference to the rmiregistry
             Registry registry = LocateRegistry.getRegistry(server, port);
             // get the proxy and the remote reference by rmiregistry lookup
-            mw = (MiddleWare) registry.lookup("TripResourceManager");
+            mw = (MiddleWare) registry.lookup("TripMiddleWare");
             if(mw!=null)
             {
                 System.out.println("Successful");

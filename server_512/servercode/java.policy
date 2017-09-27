@@ -1,4 +1,4 @@
-grant codeBase "file:/home/2015/zzhang334/DSP/server_512/servercode/" {
+grant codeBase "file:/home/2014/zxu32/DSP/server_512/servercode/" {
     permission java.security.AllPermission;
 };
 

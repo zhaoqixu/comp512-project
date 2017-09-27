@@ -1,5 +1,0 @@
-grant codeBase "file:/home/2014/zxu32/DSP/client_512/clientsrc/" {
-    permission java.security.AllPermission;
-};
-
-

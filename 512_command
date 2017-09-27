@@ -1,0 +1,18 @@
+============registry==================
+rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false 1099 &
+
+============server=====================
+export CLASSPATH=/home/2014/zxu32/DSP/server_512/servercode
+javac ResImpl/ResourceManagerImpl.java
+java -Djava.security.policy=java.policy -Djava.rmi.server.codebase=file:/home/2014/zxu32/DSP/server_512/servercode/  ResImpl.ResourceManagerImpl 1099
+
+============client=====================
+export CLASSPATH=/home/2014/zxu32/DSP/client_512/clientsrc:/home/2014/zxu32/DSP/MidInterface/MidInterface.jar
+javac client.java
+java client [servername] [port]
+
+============middleware=================
+export CLASSPATH=/home/2014/zxu32/DSP/middleware_512/middlewaresrc:/home/2014/zxu32/DSP/ResInterface/ResInterface.jar:/home/2014/zxu32/DSP/MidInterface/MidInterface.jar
+javac MidImpl/MiddleWareImpl.java
+java -Djava.security.policy=java.policy -Djava.rmi.server.codebase=file:/home/2014/zxu32/DSP/middleware_512/middlewaresrc/  MidImpl.MiddleWareImpl [server_flight] [server_car] [server_room]
+

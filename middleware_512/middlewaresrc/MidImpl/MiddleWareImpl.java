@@ -15,28 +15,27 @@ public class MiddleWareImpl implements MiddleWare
 	static ResourceManager rm_flight = null;
     static ResourceManager rm_car = null;
     static ResourceManager rm_room = null;
-    static ResourceManager rm_cust = null;
+
+    protected RMHashtable m_itemHT = new RMHashtable();
 
     public static void main(String args[]) {
         // Figure out where server is running
         String server_flight = "localhost";
         String server_car = "localhost";
         String server_room = "localhost";
-        String server_cust = "localhost";
 
         int port_local = 1088;
         int port = 1099;
 
 
-        if (args.length == 4) {
+        if (args.length == 3) {
             server_flight = args[0];
             server_car = args[1];
             server_room = args[2];
-            server_cust = args[3];
             //port = Integer.parseInt(args[1]);
-        } else if (args.length != 4) {
+        } else if (args.length != 3) {
             System.err.println ("Wrong usage");
-            System.out.println("Usage: java MidImpl.MiddleWareImpl [server_flight] [server_car] [server_room] [server_cust]");
+            System.out.println("Usage: java MidImpl.MiddleWareImpl [server_flight] [server_car] [server_room]");
             System.exit(1);
         }
 
@@ -53,13 +52,11 @@ public class MiddleWareImpl implements MiddleWare
             Registry registry_flight = LocateRegistry.getRegistry(server_flight, port);
             Registry registry_car = LocateRegistry.getRegistry(server_car, port);
             Registry registry_room = LocateRegistry.getRegistry(server_room, port);
-            Registry registry_cust = LocateRegistry.getRegistry(server_cust, port);
 
             // get the proxy and the remote reference by rmiregistry lookup
             rm_flight = (ResourceManager) registry_flight.lookup("FlightRM");
             rm_car = (ResourceManager) registry_car.lookup("CarRM");
             rm_room = (ResourceManager) registry_room.lookup("RoomRM");
-            rm_cust = (ResourceManager) registry_room.lookup("CustRM");
 
             
             if(rm_flight!=null)
@@ -91,15 +88,6 @@ public class MiddleWareImpl implements MiddleWare
             {
                 System.out.println("Unsuccessful connection to Room RM");
             }
-            if(rm_cust!=null)
-            {
-                System.out.println("Successful");
-                System.out.println("Connected to Customer RM");
-            }
-            else
-            {
-                System.out.println("Unsuccessful connection to Customer RM");
-            }
             // make call on remote method
 
 
@@ -116,6 +104,29 @@ public class MiddleWareImpl implements MiddleWare
     }
      
     public MiddleWareImpl() throws RemoteException {
+    }
+
+    // Reads a data item
+    private RMItem readData( int id, String key )
+    {
+        synchronized(m_itemHT) {
+            return (RMItem) m_itemHT.get(key);
+        }
+    }
+
+    // Writes a data item
+    private void writeData( int id, String key, RMItem value )
+    {
+        synchronized(m_itemHT) {
+            m_itemHT.put(key, value);
+        }
+    }
+    
+    // Remove the item out of storage
+    protected RMItem removeData(int id, String key) {
+        synchronized(m_itemHT) {
+            return (RMItem)m_itemHT.remove(key);
+        }
     }
     
     // Create a new flight, or add seats to existing flight
@@ -243,7 +254,17 @@ public class MiddleWareImpl implements MiddleWare
     public String queryCustomerInfo(int id, int customerID)
         throws RemoteException
     {
-        return rm_cust.queryCustomerInfo(id, customerID);
+        Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        if ( cust == null ) {
+            Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
+        } else {
+                String s = cust.printBill();
+                Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                System.out.println( s );
+                return s;
+        } // if
     }
 
     // customer functions
@@ -252,14 +273,32 @@ public class MiddleWareImpl implements MiddleWare
     public int newCustomer(int id)
         throws RemoteException
     {
-        return rm_cust.newCustomer(id);
+        Trace.info("INFO: RM::newCustomer(" + id + ") called" );
+        // Generate a globally unique ID for the new customer
+        int cid = Integer.parseInt( String.valueOf(id) +
+                                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+                                String.valueOf( Math.round( Math.random() * 100 + 1 )));
+        Customer cust = new Customer( cid );
+        writeData( id, cust.getKey(), cust );
+        Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
+        return cid;
     }
 
     // I opted to pass in customerID instead. This makes testing easier
     public boolean newCustomer(int id, int customerID )
         throws RemoteException
     {
-    	return rm_cust.newCustomer(id, customerID);
+    	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        if ( cust == null ) {
+            cust = new Customer(customerID);
+            writeData( id, cust.getKey(), cust );
+            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
+            return true;
+        } else {
+            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+            return false;
+        } // else
     }
 
 
@@ -267,7 +306,30 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteCustomer(int id, int customerID)
         throws RemoteException
     {
-    	return rm_cust.deleteCustomer(id, customerID);
+    	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        if ( cust == null ) {
+            Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            return false;
+        } else {            
+            // Increase the reserved numbers of all reservable items which the customer reserved. 
+            RMHashtable reservationHT = cust.getReservations();
+            for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+                String reservedkey = (String) (e.nextElement());
+                ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times"  );
+                ReservableItem item  = (ReservableItem) readData(id, reserveditem.getKey());
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+                item.setReserved(item.getReserved()-reserveditem.getCount());
+                item.setCount(item.getCount()+reserveditem.getCount());
+            }
+            
+            // remove the customer from the storage
+            removeData(id, cust.getKey());
+            
+            Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
+            return true;
+        } // if
     }
 
 
@@ -295,21 +357,54 @@ public class MiddleWareImpl implements MiddleWare
     public boolean reserveCar(int id, int customerID, String location)
         throws RemoteException
     {
-    	return rm_car.reserveCar(id, customerID, location);
+    	if(rm_car.reserveCar(id, customerID, location)){
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("car-" + location).toLowerCase();
+            cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
+            writeData( id, cust.getKey(), cust );
+            return true;
+        }
+        return false;
     }
-
 
     // Adds room reservation to this customer. 
     public boolean reserveRoom(int id, int customerID, String location)
         throws RemoteException
     {
-    	return rm_room.reserveRoom(id, customerID, location);
+    	if(rm_room.reserveRoom(id, customerID, location)){
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("room-" + location).toLowerCase();
+            cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
+            writeData( id, cust.getKey(), cust );
+            return true;
+        }
+        return false;
     }
     // Adds flight reservation to this customer.  
     public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
     {
-    	return rm_flight.reserveFlight(id, customerID, flightNum);
+    	if(rm_flight.reserveFlight(id, customerID, flightNum)){
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("flight-" + flightNum).toLowerCase();
+            cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+            writeData( id, cust.getKey(), cust );
+            return true;
+        }
+        return false;
+    }
+
+    public RMHashtable getCustomerReservations(int id, int customerID)
+        throws RemoteException
+    {
+        Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        if ( cust == null ) {
+            Trace.warn("RM::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            return null;
+        } else {
+            return cust.getReservations();
+        } // if
     }
     
     // Reserve an itinerary 

@@ -19,7 +19,6 @@ public class ResourceManagerImpl implements ResourceManager
     
     protected RMHashtable m_itemHT = new RMHashtable();
 
-
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
@@ -152,7 +151,7 @@ public class ResourceManagerImpl implements ResourceManager
             Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed--No more items" );
             return false;
         } else {            
-            cust.reserve( key, location, item.getPrice());        
+            cust.reserve( key, location, item.getPrice());      
             writeData( id, cust.getKey(), cust );
             
             // decrease the number of available items in the storage

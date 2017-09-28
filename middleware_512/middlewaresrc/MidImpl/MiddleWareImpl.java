@@ -12,22 +12,31 @@ import java.rmi.RMISecurityManager;
 
 public class MiddleWareImpl implements MiddleWare 
 {
-	static ResourceManager rm = null;
+	static ResourceManager rm_flight = null;
+    static ResourceManager rm_car = null;
+    static ResourceManager rm_room = null;
+    static ResourceManager rm_cust = null;
 
     public static void main(String args[]) {
         // Figure out where server is running
-        String server = "localhost";
+        String server_flight = "localhost";
+        String server_car = "localhost";
+        String server_room = "localhost";
+        String server_cust = "localhost";
+
         int port_local = 1088;
         int port = 1099;
 
-        if (args.length == 3) {
+
+        if (args.length == 4) {
             server_flight = args[0];
             server_car = args[1];
             server_room = args[2];
+            server_cust = args[3];
             //port = Integer.parseInt(args[1]);
-        } else if (args.length != 3) {
+        } else if (args.length != 4) {
             System.err.println ("Wrong usage");
-            System.out.println("Usage: java MidImpl.MiddleWareImpl [server_flight] [server_car] [server_room]");
+            System.out.println("Usage: java MidImpl.MiddleWareImpl [server_flight] [server_car] [server_room] [server_cust]");
             System.exit(1);
         }
 
@@ -44,11 +53,14 @@ public class MiddleWareImpl implements MiddleWare
             Registry registry_flight = LocateRegistry.getRegistry(server_flight, port);
             Registry registry_car = LocateRegistry.getRegistry(server_car, port);
             Registry registry_room = LocateRegistry.getRegistry(server_room, port);
+            Registry registry_cust = LocateRegistry.getRegistry(server_cust, port);
 
             // get the proxy and the remote reference by rmiregistry lookup
-            rm_flight = (ResourceManager) registry_flight.lookup("RealResourceManager");
-            rm_car = (ResourceManager) registry_car.lookup("RealResourceManager");
-            rm_room = (ResourceManager) registry_room.lookup("RealResourceManager");
+            rm_flight = (ResourceManager) registry_flight.lookup("FlightRM");
+            rm_car = (ResourceManager) registry_car.lookup("CarRM");
+            rm_room = (ResourceManager) registry_room.lookup("RoomRM");
+            rm_cust = (ResourceManager) registry_room.lookup("CustRM");
+
             
             if(rm_flight!=null)
             {
@@ -78,6 +90,15 @@ public class MiddleWareImpl implements MiddleWare
             else
             {
                 System.out.println("Unsuccessful connection to Room RM");
+            }
+            if(rm_cust!=null)
+            {
+                System.out.println("Successful");
+                System.out.println("Connected to Customer RM");
+            }
+            else
+            {
+                System.out.println("Unsuccessful connection to Customer RM");
             }
             // make call on remote method
 
@@ -222,7 +243,7 @@ public class MiddleWareImpl implements MiddleWare
     public String queryCustomerInfo(int id, int customerID)
         throws RemoteException
     {
-        return rm.queryCustomerInfo(id, customerID);
+        return rm_cust.queryCustomerInfo(id, customerID);
     }
 
     // customer functions
@@ -231,14 +252,14 @@ public class MiddleWareImpl implements MiddleWare
     public int newCustomer(int id)
         throws RemoteException
     {
-        return rm.newCustomer(id);
+        return rm_cust.newCustomer(id);
     }
 
     // I opted to pass in customerID instead. This makes testing easier
     public boolean newCustomer(int id, int customerID )
         throws RemoteException
     {
-    	return rm.newCustomer(id, customerID);
+    	return rm_cust.newCustomer(id, customerID);
     }
 
 
@@ -246,7 +267,7 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteCustomer(int id, int customerID)
         throws RemoteException
     {
-    	return rm.deleteCustomer(id, customerID);
+    	return rm_cust.deleteCustomer(id, customerID);
     }
 
 
@@ -295,7 +316,7 @@ public class MiddleWareImpl implements MiddleWare
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean Car,boolean Room)
         throws RemoteException
     {
-        return rm.itinerary(id, customer, flightNumbers, location, Car, Room);
+        return false;
     }
 
     public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)

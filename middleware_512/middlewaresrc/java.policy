@@ -1,0 +1,5 @@
+grant codeBase "file:/home/2014/zxu32/DSP/middleware_512/middlewaresrc/" {
+    permission java.security.AllPermission;
+};
+
+

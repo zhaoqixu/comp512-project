@@ -1,0 +1,5 @@
+grant codeBase "file:/home/2014/zxu32/DSP/server_512/servercode/" {
+    permission java.security.AllPermission;
+};
+
+

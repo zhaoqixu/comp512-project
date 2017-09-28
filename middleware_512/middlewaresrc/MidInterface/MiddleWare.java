@@ -136,6 +136,5 @@ public interface MiddleWare extends Remote
 the final destination */
     public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
     throws RemoteException; 
-
     			
 }

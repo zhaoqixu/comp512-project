@@ -357,41 +357,53 @@ public class MiddleWareImpl implements MiddleWare
     public boolean reserveCar(int id, int customerID, String location)
         throws RemoteException
     {
-    	if(rm_car.reserveCar(id, customerID, location)){
-            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("car-" + location).toLowerCase();
+    	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        String key = ("car-" + location).toLowerCase();
+
+        if ( cust == null ) {
+            Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+            return false;
+        } else {
+            rm_car.reserveCar(id, customerID, location);
             cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
             writeData( id, cust.getKey(), cust );
             return true;
         }
-        return false;
     }
 
     // Adds room reservation to this customer. 
     public boolean reserveRoom(int id, int customerID, String location)
         throws RemoteException
     {
-    	if(rm_room.reserveRoom(id, customerID, location)){
-            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("room-" + location).toLowerCase();
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        String key = ("room-" + location).toLowerCase();
+
+        if ( cust == null ) {
+            Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+            return false;
+        } else {
+    	    rm_room.reserveRoom(id, customerID, location);
             cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
             writeData( id, cust.getKey(), cust );
             return true;
         }
-        return false;
     }
     // Adds flight reservation to this customer.  
     public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
     {
-    	if(rm_flight.reserveFlight(id, customerID, flightNum)){
-            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("flight-" + flightNum).toLowerCase();
+        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+        String key = ("flight-" + flightNum).toLowerCase();
+
+        if ( cust == null ) {
+            Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
+            return false;
+        } else {
+            rm_flight.reserveFlight(id, customerID, flightNum);
             cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
             writeData( id, cust.getKey(), cust );
             return true;
         }
-        return false;
     }
 
     public RMHashtable getCustomerReservations(int id, int customerID)
@@ -411,7 +423,29 @@ public class MiddleWareImpl implements MiddleWare
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean Car,boolean Room)
         throws RemoteException
     {
-        return false;
+        boolean correct = false;
+        if (Car) {
+            correct = reserveCar(id, customer, location);
+            if (!correct) {
+                return false;
+            }
+        }
+        if (Room) {
+            correct = reserveRoom(id, customer, location);
+            if (!correct) {
+                return false;
+            }
+        }
+        if (flightNumbers.size()==0) {
+            return false;
+        }
+        for (int i = 0; i < flightNumbers.size() ;i++ ) {
+            correct = reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+            if (!correct) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)

@@ -316,7 +316,29 @@ public class MiddleWareImpl implements MiddleWare
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean Car,boolean Room)
         throws RemoteException
     {
-        return false;
+        boolean correct = false;
+        if (Car) {
+            correct = reserveCar(id, customer, location);
+            if (!correct) {
+                return false;
+            }
+        }
+        if (Room) {
+            correct = reserveRoom(id, customer, location);
+            if (!correct) {
+                return false;
+            }
+        }
+        if (flightNumbers.size()==0) {
+            return false;
+        }
+        for (int i = 0; i < flightNumbers.size() ;i++ ) {
+            correct = reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+            if (!correct) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)

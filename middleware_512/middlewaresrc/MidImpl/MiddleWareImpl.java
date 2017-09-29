@@ -420,6 +420,7 @@ public class MiddleWareImpl implements MiddleWare
     }
     // Reserve an itinerary 
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
+        throws RemoteException
     {
         if (flightNumbers.size()==0) {
             return false;
@@ -445,27 +446,21 @@ public class MiddleWareImpl implements MiddleWare
 
         if (car) {
             // check if the item is available
-            ReservableItem item = (ReservableItem)readData(id, Car.getKey(location));
-            if ( item == null )
-                return false;
-            if (item.getCount()==0)
+            int item = rm_car.queryCars(id, location);
+            if ( item == 0 )
                 return false;
         }
 
         if (room) {
             // check if the item is available
-            ReservableItem item = (ReservableItem)readData(id, Hotel.getKey(location));
-            if ( item == null )
-                return false;
-            if (item.getCount()==0)
+            int item = rm_room.queryRooms(id, location);
+            if ( item == 0 )
                 return false;
         }
         Set<Integer> keys = f_cnt.keySet();
         for (int key : keys) {
-            ReservableItem item = (ReservableItem)readData(id, Flight.getKey(key));
-            if ( item == null )
-                return false;
-            if (item.getCount() < f_cnt.get(key))
+            int item = rm_flight.queryFlight(id, key);
+            if (item < f_cnt.get(key))
                 return false;
         }
 

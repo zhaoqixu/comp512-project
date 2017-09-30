@@ -131,5 +131,9 @@ public interface ResourceManager extends Remote
     /* reserve an itinerary */
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location, boolean car, boolean room)
 	throws RemoteException; 
+
+    /* Free a reserved item */
+    public void freeItemRes(int id, int customer, String reservedkey, int reservedCount)
+    throws RemoteException;
     			
 }

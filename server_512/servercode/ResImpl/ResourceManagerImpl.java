@@ -473,4 +473,14 @@ public class ResourceManagerImpl implements ResourceManager
         return false;
     }
 
+    public void freeItemRes(int id, int customerID,String reservedkey, int reservedCount)
+        throws RemoteException
+    {
+        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
+        ReservableItem item  = (ReservableItem) readData(id, reservedkey);
+        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+        item.setReserved(item.getReserved()-reservedCount);
+        item.setCount(item.getCount()+reservedCount);
+    }
+
 }

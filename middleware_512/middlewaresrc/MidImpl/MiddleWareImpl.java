@@ -317,11 +317,27 @@ public class MiddleWareImpl implements MiddleWare
             for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
                 String reservedkey = (String) (e.nextElement());
                 ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times"  );
-                ReservableItem item  = (ReservableItem) readData(id, reserveditem.getKey());
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
-                item.setReserved(item.getReserved()-reserveditem.getCount());
-                item.setCount(item.getCount()+reserveditem.getCount());
+                int reservedCount = reserveditem.getCount();
+
+                switch (reservedkey.charAt(0)) {
+                	case 'c':
+                		rm_car.freeItemRes(id, customerID, reservedkey, reservedCount);
+                		break;
+                	case 'f':
+                		rm_flight.freeItemRes(id, customerID, reservedkey, reservedCount);
+                		break;
+                	case 'r':
+                		rm_room.freeItemRes(id, customerID, reservedkey, reservedCount);
+                		break;
+                	default:
+                		break;
+                }
+                
+                // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times"  );
+                // ReservableItem item  = (ReservableItem) readData(id, reserveditem.getKey());
+                // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+                // item.setReserved(item.getReserved()-reservedCount);
+                // item.setCount(item.getCount()+reservedCount);
             }
             
             // remove the customer from the storage

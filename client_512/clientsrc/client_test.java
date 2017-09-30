@@ -80,7 +80,7 @@ public class client_test
 		System.out.println("Type \"help\" for list of supported commands");
 		// Add 20 flights with i,i,i,i args
 		for (int i = 1; i <= 20; i++) {
-			System.out.print("\n>newflight,"+i+","+i+","+i+","+i);
+			System.out.println("\n>newflight,"+i+","+i+","+i+","+i);
 			System.out.println("Adding a new Flight using id: "+i);
 			System.out.println("Flight number: "+i);
 			System.out.println("Add Flight Seats: "+i);
@@ -99,7 +99,7 @@ public class client_test
 		}
 		// Add 20 Cars with i,i,i,i args
 		for (int i = 1; i <= 20; i++) {
-			System.out.print("\n>newcar,"+i+","+i+","+i+","+i);
+		System.out.println("\n>newcar,"+i+","+i+","+i+","+i);
             System.out.println("Adding a new Car using id: "+i);
             System.out.println("Car Location: "+i);
             System.out.println("Add Number of Cars: "+i);
@@ -118,7 +118,7 @@ public class client_test
 		}
 		// Add 20 Rooms with i,i,i,i args
 		for (int i = 1; i <= 20; i++) {
-			System.out.print("\n>newroom,"+i+","+i+","+i+","+i);
+			System.out.println("\n>newroom,"+i+","+i+","+i+","+i);
             System.out.println("Adding a new Room using id: "+i);
             System.out.println("Room Location: "+i);
             System.out.println("Add Number of Rooms: "+i);
@@ -137,7 +137,7 @@ public class client_test
 		}
 		// Add 5 Customers with given ID with i,i args
 		for (int i = 1; i <= 5; i++) {
-			System.out.print("\n>newflight,"+i+","+i+","+i+","+i);
+			System.out.println("\n>newflight,"+i+","+i+","+i+","+i);
 			System.out.println("Adding a new Customer using id:"+i + " and cid " +i);
             try{
             boolean customer=mw.newCustomer(i,i);
@@ -152,7 +152,7 @@ public class client_test
 		// Add 5 Customers with random ID
 		int[] randCust = new int[5];
 		for (int i = 1; i<=5 ; i++ ) {
-			System.out.print("\n>newcustomer,"+i);
+			System.out.println("\n>newcustomer,"+i);
             System.out.println("Adding a new Customer using id:"+i);
             try{
             randCust[i-1]=mw.newCustomer(i);
@@ -166,7 +166,7 @@ public class client_test
 		}
 		// Delete Last 5 flights
 		for (int i = 16; i<=20; i++) {
-			System.out.print("\n>deleteflight,"+i+","+i);
+			System.out.println("\n>deleteflight,"+i+","+i);
 			System.out.println("Deleting a flight using id: "+i);
             System.out.println("Flight Number: "+i);
             try{
@@ -183,7 +183,7 @@ public class client_test
 		}
 		// Delete Last 5 Cars
 		for (int i = 16; i<=20; i++) {
-			System.out.print("\n>deletecar,"+i+","+i);
+			System.out.println("\n>deletecar,"+i+","+i);
             System.out.println("Deleting the cars from a particular location  using id: "+i);
             System.out.println("Car Location: "+i);
             try{
@@ -200,7 +200,7 @@ public class client_test
 		}
 		// Delete Last 5 Rooms
 		for (int i = 16; i<=20; i++) {
-			System.out.print("\n>deleteroom,"+i+","+i);
+			System.out.println("\n>deleteroom,"+i+","+i);
             System.out.println("Deleting all rooms from a particular location  using id: "+i);
             System.out.println("Room Location: "+i);
             try{
@@ -217,7 +217,7 @@ public class client_test
 		}
 		// Delete Random Customers created before
 		for (int i = 1; i<=5 ; i++) {
-			System.out.print("\n>deletecustomer,"+i+","+randCust[i-1]);
+			System.out.println("\n>deletecustomer,"+i+","+randCust[i-1]);
 			System.out.println("Deleting a customer from the database using id: "+i);
             System.out.println("Customer id: "+randCust[i-1]);
             try{
@@ -351,8 +351,8 @@ public class client_test
 		}
 		// Queryflightprice with existed flightNum, deleted flightNum and non-existed flightNum
 		for (int i = 1;i <= 5; i++) {
-			System.out.println("\n>queryflightprice,"+i+","+i);
-			System.out.println("Querying a flight Price using id: "+i);
+		System.out.println("\n>queryflightprice,"+i+","+i);
+		System.out.println("Querying a flight Price using id: "+i);
             System.out.println("Flight number: "+i);
             try{
             price=mw.queryFlightPrice(i,i);
@@ -390,8 +390,8 @@ public class client_test
 		}
 		// Querycarprice with existed flightNum, deleted flightNum and non-existed flightNum
 		for (int i = 1;i <= 5; i++) {
-			System.out.println("\n>querycarprice,"+i+","+i);
-			System.out.println("Querying a car price using id: "+i);
+		System.out.println("\n>querycarprice,"+i+","+i);
+		System.out.println("Querying a car price using id: "+i);
             System.out.println("Car location: "+i);
             try{
             price=mw.queryCarsPrice(i,String.valueOf(i));
@@ -429,8 +429,8 @@ public class client_test
 		}
 		// Queryroomprice with existed flightNum, deleted flightNum and non-existed flightNum
 		for (int i = 1;i <= 5; i++) {
-			System.out.println("\n>queryroomprice,"+i+","+i);
-			System.out.println("Querying a room price using id: "+i);
+		System.out.println("\n>queryroomprice,"+i+","+i);
+		System.out.println("Querying a room price using id: "+i);
             System.out.println("Room location: "+i);
             try{
             price=mw.queryRoomsPrice(i,String.valueOf(i));
@@ -468,7 +468,7 @@ public class client_test
 		}
 		// reserve a flight
 		for (int i = 1; i <= 5; i++) {
-			System.out.println("\n>reserveflight,"+i+","+i+","+i);
+		System.out.println("\n>reserveflight,"+i+","+i+","+i);
             System.out.println("Reserving a seat on a flight using id: "+i);
             System.out.println("Customer id: "+i);
             System.out.println("Flight number: "+i);
@@ -486,7 +486,7 @@ public class client_test
 		}
 		// reserve a car
 		for (int i = 1; i <= 5; i++) {
-			System.out.println("\n>reservecar,"+i+","+i+","+i);
+		System.out.println("\n>reservecar,"+i+","+i+","+i);
             System.out.println("Reserving a car at a location using id: "+i);
             System.out.println("Customer id: "+i);
             System.out.println("Location: "+i);
@@ -568,6 +568,7 @@ public class client_test
             System.out.println(e.getMessage());
             e.printStackTrace();
             }
+            System.out.println("\n>querycustomer,"+i+","+randCust[i-1]);
             System.out.println("Querying Customer information using id: "+i);
             System.out.println("Customer id: "+randCust[i-1]);
             try{

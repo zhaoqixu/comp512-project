@@ -380,10 +380,14 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
             return false;
         } else {
-            rm_car.reserveCar(id, customerID, location);
-            cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
-            writeData( id, cust.getKey(), cust );
-            return true;
+        	if (rm_car.reserveCar(id, customerID, location) == true){
+	            cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
+	            writeData( id, cust.getKey(), cust );
+	            return true;
+	        } else {
+	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+            	return false;
+	        }
         }
     }
 
@@ -398,10 +402,14 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
             return false;
         } else {
-    	    rm_room.reserveRoom(id, customerID, location);
-            cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
-            writeData( id, cust.getKey(), cust );
-            return true;
+        	if(rm_room.reserveRoom(id, customerID, location) == true){
+	            cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
+	            writeData( id, cust.getKey(), cust );
+	            return true;
+	        } else {
+	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+            	return false;
+	        }
         }
     }
     // Adds flight reservation to this customer.  
@@ -415,10 +423,14 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
             return false;
         } else {
-            rm_flight.reserveFlight(id, customerID, flightNum);
-            cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
-            writeData( id, cust.getKey(), cust );
-            return true;
+            if(rm_flight.reserveFlight(id, customerID, flightNum) == true){
+            	cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+            	writeData( id, cust.getKey(), cust );
+            	return true;
+            } else {
+            	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + flightNum+") failed" );
+            	return false;
+            }
         }
     }
 

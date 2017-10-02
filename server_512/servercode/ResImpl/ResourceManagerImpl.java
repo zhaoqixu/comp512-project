@@ -415,10 +415,8 @@ public class ResourceManagerImpl implements ResourceManager
                 item.setReserved(item.getReserved()-reserveditem.getCount());
                 item.setCount(item.getCount()+reserveditem.getCount());
             }
-            
             // remove the customer from the storage
             removeData(id, cust.getKey());
-            
             Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
             return true;
         } // if

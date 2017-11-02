@@ -1,4 +1,6 @@
 import MidInterface.*;
+import MidImpl.TransactionAbortedException;
+import MidImpl.InvalidTransactionException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;

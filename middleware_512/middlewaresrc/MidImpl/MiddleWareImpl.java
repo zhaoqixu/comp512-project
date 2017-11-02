@@ -457,48 +457,93 @@ public class MiddleWareImpl implements MiddleWare
         if ( cust == null ) {
             return false;
         } 
-        Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
-        int[] flights = new int[flightNumbers.size()];
-        for (int i = 0; i < flightNumbers.size(); i++) {
-            try {
-                flights[i] = gi(flightNumbers.elementAt(i));
-            }
-            catch (Exception e){}
-        }
-        for (int i = 0; i < flightNumbers.size(); i++) {
-            if (f_cnt.containsKey(flights[i]))
-                f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
-            else
-                f_cnt.put(flights[i], 1);
-        }
+        // Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
+        // int[] flights = new int[flightNumbers.size()];
+        // for (int i = 0; i < flightNumbers.size(); i++) {
+        //     try {
+        //         flights[i] = gi(flightNumbers.elementAt(i));
+        //     }
+        //     catch (Exception e){}
+        // }
+        // for (int i = 0; i < flightNumbers.size(); i++) {
+        //     if (f_cnt.containsKey(flights[i]))
+        //         f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
+        //     else
+        //         f_cnt.put(flights[i], 1);
+        // }
 
+        // if (car) {
+        //     // check if the item is available
+        //     int item = rm_car.queryCars(id, location);
+        //     if ( item == 0 )
+        //         return false;
+        // }
+
+        // if (room) {
+        //     // check if the item is available
+        //     int item = rm_room.queryRooms(id, location);
+        //     if ( item == 0 )
+        //         return false;
+        // }
+        // Set<Integer> keys = f_cnt.keySet();
+        // for (int key : keys) {
+        //     int item = rm_flight.queryFlight(id, key);
+        //     if (item < f_cnt.get(key))
+        //         return false;
+        // }
+        String car_key = ("car-" + location).toLowerCase();
+        String room_key = ("room-" + location).toLowerCase();
+        boolean car_reserved = false;
+        boolean room_reserved = false;
+        String[] flight_key = new String[flightNumbers.size()];
+        boolean[] flight_reserved = new boolean[flightNumbers.size()];
+        for (int i = 0; i < flightNumbers.size(); i++ ) {
+            int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
+            flight_key[i] = ("flight-" + flightNum).toLowerCase();
+            flight_reserved[i] = false;
+        }
         if (car) {
-            // check if the item is available
-            int item = rm_car.queryCars(id, location);
-            if ( item == 0 )
+            car_reserved = rm_car.reserveCar(id, customer, location);
+            if (!car_reserved) {
                 return false;
+            }
         }
-
         if (room) {
-            // check if the item is available
-            int item = rm_room.queryRooms(id, location);
-            if ( item == 0 )
+            room_reserved = rm_room.reserveRoom(id, customer, location);
+            if (!room_reserved) {
+                if (car_reserved) {
+                    rm_car.freeItemRes(id, customer, car_key, 1);
+                }
                 return false;
+            }
         }
-        Set<Integer> keys = f_cnt.keySet();
-        for (int key : keys) {
-            int item = rm_flight.queryFlight(id, key);
-            if (item < f_cnt.get(key))
+        for (int i = 0; i < flightNumbers.size(); i++ ) {
+            flight_reserved[i] = rm_flight.reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+            if (!flight_reserved[i]) {
+                if (car_reserved) {
+                    rm_car.freeItemRes(id, customer, car_key, 1);
+                }
+                if (room_reserved) {
+                    rm_room.freeItemRes(id, customer, room_key, 1);
+                }
+                for (int j = 0; j < i; j++ ) {
+                    rm_flight.freeItemRes(id, customer, flight_key[j], 1);
+                }
                 return false;
+            }
         }
-
-        if (car) 
-            reserveCar(id, customer, location);
-        if (room)
-            reserveRoom(id, customer, location);
-
-        for (int i = 0; i < flightNumbers.size() ;i++ ) {
-            reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+        if (car_reserved) {
+            cust.reserve( car_key, location, rm_car.queryCarsPrice(id, location));      
+            writeData( id, cust.getKey(), cust );
+        }
+        if (room_reserved) {
+            cust.reserve( room_key, location, rm_room.queryRoomsPrice(id, location));      
+            writeData( id, cust.getKey(), cust );
+        }
+        for (int i = 0; i < flightNumbers.size(); i++ ) {
+            int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
+            cust.reserve( flight_key[i], String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+            writeData( id, cust.getKey(), cust );
         }
         return true;
     }

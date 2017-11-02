@@ -45,7 +45,7 @@ public class ResourceManagerImpl implements ResourceManager
             Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind(rm_name, rm);
 
-            System.err.println("Server ready");
+            System.err.println(rm_name +" server ready");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
@@ -476,6 +476,10 @@ public class ResourceManagerImpl implements ResourceManager
     {
         Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
         ReservableItem item  = (ReservableItem) readData(id, reservedkey);
+        if (item == null) {
+            Trace.info("Free item does not exist, exit.");
+            return;
+        }
         Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
         item.setReserved(item.getReserved()-reservedCount);
         item.setCount(item.getCount()+reservedCount);

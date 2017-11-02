@@ -191,7 +191,12 @@ public class client
             try{
             Id = obj.getInt(arguments.elementAt(1));
             int customer=mw.newCustomer(Id);
-            System.out.println("new customer id:"+customer);
+            if (customer == -1) {
+                System.out.println("Customer could not be added");
+            }
+            else {
+                System.out.println("new customer id:"+customer);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -300,7 +305,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             flightNum = obj.getInt(arguments.elementAt(2));
             int seats=mw.queryFlight(Id,flightNum);
-            System.out.println("Number of seats available:"+seats);
+            if (seats >= 0)
+                System.out.println("Number of seats available:"+seats);
+            else
+                System.out.println("Error: Could not query");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -320,7 +328,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
             numCars=mw.queryCars(Id,location);
-            System.out.println("number of Cars at this location:"+numCars);
+            if (numCars >= 0)
+                System.out.println("number of Cars at this location:"+numCars);
+            else
+                System.out.println("Error: Could not query");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -340,7 +351,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
             numRooms=mw.queryRooms(Id,location);
-            System.out.println("number of Rooms at this location:"+numRooms);
+            if (numRooms >= 0)
+                System.out.println("number of Rooms at this location:"+numRooms);
+            else
+                System.out.println("Error: Could not query");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -380,7 +394,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             flightNum = obj.getInt(arguments.elementAt(2));
             price=mw.queryFlightPrice(Id,flightNum);
-            System.out.println("Price of a seat:"+price);
+            if (price >= 0)
+                System.out.println("Price of a seat:"+price);
+            else
+                System.out.println("Error: Could not query price");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -400,7 +417,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
             price=mw.queryCarsPrice(Id,location);
-            System.out.println("Price of a car at this location:"+price);
+            if (price >=0)
+                System.out.println("Price of a car at this location:"+price);
+            else
+                System.out.println("Error: Could not query price");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -420,7 +440,10 @@ public class client
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
             price=mw.queryRoomsPrice(Id,location);
-            System.out.println("Price of Rooms at this location:"+price);
+            if (price >= 0)
+                System.out.println("Price of Rooms at this location:"+price);
+            else
+                System.out.println("Error: Could not query price");
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -565,7 +588,88 @@ public class client
             e.printStackTrace();
             }
             break;
-            
+        
+        case 23:  // start
+            if(arguments.size()!=1){
+            obj.wrongNumber();
+            break;
+            }
+            System.out.println("Starting a transaction session...");
+            try{
+            int transactionId=mw.start();
+            System.out.println("Transaction ID granted :"+transactionId);
+            }
+            catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            }
+            break;
+
+        case 24:  // commit
+            if(arguments.size()!=2){
+            obj.wrongNumber();
+            break;
+            }
+            System.out.println("Committing a transaction session...");
+            try{
+            int transactionId=obj.getInt(arguments.elementAt(1));
+            boolean committed=mw.commit(transactionId);
+            if (committed)
+                System.out.println("Transaction ID :"+transactionId+" committed");
+            else
+                System.out.println("Commit failed");
+            }
+            catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            }
+            break;
+
+        case 25:  // abort
+            if(arguments.size()!=2){
+            obj.wrongNumber();
+            break;
+            }
+            System.out.println("Aborting a transaction session...");
+            try{
+            int transactionId=obj.getInt(arguments.elementAt(1));
+            boolean aborted=mw.commit(transactionId);
+            if (aborted)
+                System.out.println("Transaction ID :"+transactionId+" aborted");
+            else
+                System.out.println("Abort failed");
+            }
+            catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            }
+            break;
+
+        case 26:  //shutdown
+            if(arguments.size()!=1){
+            obj.wrongNumber();
+            break;
+            }
+            try {
+            System.out.println("Shutdown middleware...");
+            if (mw.shutdown()) {
+                System.out.println("Quitting client...");
+                System.exit(1);
+            }
+            else {
+                System.out.println("Shutdown failed...");
+            }
+            }
+            catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            }
+            break;
+
         default:
             System.out.println("The interface does not support this command.");
             break;
@@ -632,6 +736,14 @@ public class client
         return 21;
     else if (argument.compareToIgnoreCase("newcustomerid")==0)
         return 22;
+    else if (argument.compareToIgnoreCase("start")==0)
+        return 23;
+    else if (argument.compareToIgnoreCase("commit")==0)
+        return 24;
+    else if (argument.compareToIgnoreCase("abort")==0)
+        return 25;
+    else if (argument.compareToIgnoreCase("shutdown")==0)
+        return 26;
     else
         return 666;
 

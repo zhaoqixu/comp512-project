@@ -1,6 +1,6 @@
 package ResInterface;
 
-
+import ResImpl.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -135,5 +135,12 @@ public interface ResourceManager extends Remote
     /* Free a reserved item */
     public void freeItemRes(int id, int customer, String reservedkey, int reservedCount)
     throws RemoteException;
-    			
+
+    public int start() throws RemoteException;
+
+    public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    
+    public void abort(int transactionId) throws RemoteException, InvalidTransactionException;
+    
+    public boolean shutdown() throws RemoteException;			
 }

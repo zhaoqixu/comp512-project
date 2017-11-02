@@ -1,6 +1,7 @@
 package MidImpl;
 import ResInterface.*;
 import MidInterface.*;
+import LockManager.*;
 
 import java.util.*;
 
@@ -12,6 +13,11 @@ import java.rmi.RMISecurityManager;
 
 public class MiddleWareImpl implements MiddleWare 
 {
+    public static final int READ = 0;
+    public static final int WRITE = 1;
+    protected LockManager mw_locks;
+    protected int txn_counter; // should be moved to TM
+    protected ArrayList<Integer> active_txn; // should be moved to TM
 	static ResourceManager rm_flight = null;
     static ResourceManager rm_car = null;
     static ResourceManager rm_room = null;
@@ -104,6 +110,9 @@ public class MiddleWareImpl implements MiddleWare
     }
      
     public MiddleWareImpl() throws RemoteException {
+        this.mw_locks = new LockManager();
+        this.txn_counter = 0; // should be moved to TM
+        this.active_txn = new ArrayList<Integer>(); // should be moved to TM
     }
 
     // Reads a data item
@@ -254,17 +263,28 @@ public class MiddleWareImpl implements MiddleWare
     public String queryCustomerInfo(int id, int customerID)
         throws RemoteException
     {
-        Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        if ( cust == null ) {
-            Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
-            return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
-        } else {
-                String s = cust.printBill();
-                Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
-                System.out.println( s );
-                return s;
-        } // if
+        try {
+            Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return "";
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            if ( cust == null ) {
+                Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
+            } else {
+                    String s = cust.printBill();
+                    Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                    System.out.println( s );
+                    return s;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return "";
+        }
     }
 
     // customer functions
@@ -273,32 +293,59 @@ public class MiddleWareImpl implements MiddleWare
     public int newCustomer(int id)
         throws RemoteException
     {
-        Trace.info("INFO: RM::newCustomer(" + id + ") called" );
-        // Generate a globally unique ID for the new customer
-        int cid = Integer.parseInt( String.valueOf(id) +
-                                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
-                                String.valueOf( Math.round( Math.random() * 100 + 1 )));
-        Customer cust = new Customer( cid );
-        writeData( id, cust.getKey(), cust );
-        Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
-        return cid;
+        try {
+            Trace.info("INFO: RM::newCustomer(" + id + ") called" );
+            // Generate a globally unique ID for the new customer
+            int cid = Integer.parseInt( String.valueOf(id) +
+                                    String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+                                    String.valueOf( Math.round( Math.random() * 100 + 1 )));
+            Customer cust = new Customer( cid );
+            if (!mw_locks.Lock(id, cust.getKey(), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+            writeData( id, cust.getKey(), cust );
+            Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
+            return cid;
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     }
 
     // I opted to pass in customerID instead. This makes testing easier
     public boolean newCustomer(int id, int customerID )
         throws RemoteException
     {
-    	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        if ( cust == null ) {
-            cust = new Customer(customerID);
-            writeData( id, cust.getKey(), cust );
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
-            return true;
-        } else {
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+        try {
+        	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            if ( cust == null ) {
+                cust = new Customer(customerID);
+                // if (!mw_locks.Lock(id, cust.getKey(), WRITE))
+                // {
+                //     Trace.warn("RM::Lock failed--Can not acquire lock");
+                //     return false;
+                // }
+                writeData( id, cust.getKey(), cust );
+                Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
+                return true;
+            } else {
+                Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+                return false;
+            } // else
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
             return false;
-        } // else
+        }
     }
 
 
@@ -306,46 +353,57 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteCustomer(int id, int customerID)
         throws RemoteException
     {
-    	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        if ( cust == null ) {
-            Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
-            return false;
-        } else {            
-            // Increase the reserved numbers of all reservable items which the customer reserved. 
-            RMHashtable reservationHT = cust.getReservations();
-            for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-                String reservedkey = (String) (e.nextElement());
-                ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-                int reservedCount = reserveditem.getCount();
+        try {
+        	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            if ( cust == null ) {
+                Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                return false;
+            } else {            
+                // Increase the reserved numbers of all reservable items which the customer reserved. 
+                RMHashtable reservationHT = cust.getReservations();
+                for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+                    String reservedkey = (String) (e.nextElement());
+                    ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+                    int reservedCount = reserveditem.getCount();
 
-                switch (reservedkey.charAt(0)) {
-                	case 'c':
-                		rm_car.freeItemRes(id, customerID, reservedkey, reservedCount);
-                		break;
-                	case 'f':
-                		rm_flight.freeItemRes(id, customerID, reservedkey, reservedCount);
-                		break;
-                	case 'r':
-                		rm_room.freeItemRes(id, customerID, reservedkey, reservedCount);
-                		break;
-                	default:
-                		break;
+                    switch (reservedkey.charAt(0)) {
+                    	case 'c':
+                    		rm_car.freeItemRes(id, customerID, reservedkey, reservedCount);
+                    		break;
+                    	case 'f':
+                    		rm_flight.freeItemRes(id, customerID, reservedkey, reservedCount);
+                    		break;
+                    	case 'r':
+                    		rm_room.freeItemRes(id, customerID, reservedkey, reservedCount);
+                    		break;
+                    	default:
+                    		break;
+                    }
+                    
+                    // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times"  );
+                    // ReservableItem item  = (ReservableItem) readData(id, reserveditem.getKey());
+                    // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+                    // item.setReserved(item.getReserved()-reservedCount);
+                    // item.setCount(item.getCount()+reservedCount);
                 }
                 
-                // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times"  );
-                // ReservableItem item  = (ReservableItem) readData(id, reserveditem.getKey());
-                // Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reserveditem.getKey() + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
-                // item.setReserved(item.getReserved()-reservedCount);
-                // item.setCount(item.getCount()+reservedCount);
-            }
-            
-            // remove the customer from the storage
-            removeData(id, cust.getKey());
-            
-            Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
-            return true;
-        } // if
+                // remove the customer from the storage
+                removeData(id, cust.getKey());
+                
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
+                return true;
+            } // if
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
     }
 
 
@@ -373,21 +431,32 @@ public class MiddleWareImpl implements MiddleWare
     public boolean reserveCar(int id, int customerID, String location)
         throws RemoteException
     {
-    	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        String key = ("car-" + location).toLowerCase();
+        try {
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("car-" + location).toLowerCase();
 
-        if ( cust == null ) {
-            Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+            if ( cust == null ) {
+                Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+                return false;
+            } else {
+            	if (rm_car.reserveCar(id, customerID, location) == true){
+    	            cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
+    	            writeData( id, cust.getKey(), cust );
+    	            return true;
+    	        } else {
+    	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+                	return false;
+    	        }
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
             return false;
-        } else {
-        	if (rm_car.reserveCar(id, customerID, location) == true){
-	            cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
-	            writeData( id, cust.getKey(), cust );
-	            return true;
-	        } else {
-	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
-            	return false;
-	        }
         }
     }
 
@@ -395,56 +464,88 @@ public class MiddleWareImpl implements MiddleWare
     public boolean reserveRoom(int id, int customerID, String location)
         throws RemoteException
     {
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        String key = ("room-" + location).toLowerCase();
-
-        if ( cust == null ) {
-            Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+        try {
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("room-" + location).toLowerCase();
+            if ( cust == null ) {
+                Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+                return false;
+            } else {
+            	if(rm_room.reserveRoom(id, customerID, location) == true){
+    	            cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
+    	            writeData( id, cust.getKey(), cust );
+    	            return true;
+    	        } else {
+    	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+                	return false;
+    	        }
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
             return false;
-        } else {
-        	if(rm_room.reserveRoom(id, customerID, location) == true){
-	            cust.reserve( key, location, rm_room.queryRoomsPrice(id, location));      
-	            writeData( id, cust.getKey(), cust );
-	            return true;
-	        } else {
-	        	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
-            	return false;
-	        }
         }
     }
     // Adds flight reservation to this customer.  
     public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
     {
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        String key = ("flight-" + flightNum).toLowerCase();
-
-        if ( cust == null ) {
-            Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
-            return false;
-        } else {
-            if(rm_flight.reserveFlight(id, customerID, flightNum) == true){
-            	cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
-            	writeData( id, cust.getKey(), cust );
-            	return true;
-            } else {
-            	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + flightNum+") failed" );
-            	return false;
+        try {
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
             }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            String key = ("flight-" + flightNum).toLowerCase();
+
+            if ( cust == null ) {
+                Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
+                return false;
+            } else {
+                if(rm_flight.reserveFlight(id, customerID, flightNum) == true){
+                	cust.reserve( key, String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+                	writeData( id, cust.getKey(), cust );
+                	return true;
+                } else {
+                	Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + flightNum+") failed" );
+                	return false;
+                }
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
         }
     }
 
     public RMHashtable getCustomerReservations(int id, int customerID)
         throws RemoteException
     {
-        Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
-        Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-        if ( cust == null ) {
-            Trace.warn("RM::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+        try {
+            Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
+            if (!mw_locks.Lock(id, Customer.getKey(customerID), READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return null;
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            if ( cust == null ) {
+                Trace.warn("RM::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                return null;
+            } else {
+                return cust.getReservations();
+            } // if
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
             return null;
-        } else {
-            return cust.getReservations();
-        } // if
+        }
     }
     // Reserve an itinerary 
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
@@ -453,99 +554,110 @@ public class MiddleWareImpl implements MiddleWare
         if (flightNumbers.size()==0) {
             return false;
         }
-        Customer cust = (Customer) readData( id, Customer.getKey(customer) );        
-        if ( cust == null ) {
+        try {
+            if (!mw_locks.Lock(id, Customer.getKey(customer), WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+            Customer cust = (Customer) readData( id, Customer.getKey(customer) );        
+            if ( cust == null ) {
+                return false;
+            } 
+            // Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
+            // int[] flights = new int[flightNumbers.size()];
+            // for (int i = 0; i < flightNumbers.size(); i++) {
+            //     try {
+            //         flights[i] = gi(flightNumbers.elementAt(i));
+            //     }
+            //     catch (Exception e){}
+            // }
+            // for (int i = 0; i < flightNumbers.size(); i++) {
+            //     if (f_cnt.containsKey(flights[i]))
+            //         f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
+            //     else
+            //         f_cnt.put(flights[i], 1);
+            // }
+
+            // if (car) {
+            //     // check if the item is available
+            //     int item = rm_car.queryCars(id, location);
+            //     if ( item == 0 )
+            //         return false;
+            // }
+
+            // if (room) {
+            //     // check if the item is available
+            //     int item = rm_room.queryRooms(id, location);
+            //     if ( item == 0 )
+            //         return false;
+            // }
+            // Set<Integer> keys = f_cnt.keySet();
+            // for (int key : keys) {
+            //     int item = rm_flight.queryFlight(id, key);
+            //     if (item < f_cnt.get(key))
+            //         return false;
+            // }
+            String car_key = ("car-" + location).toLowerCase();
+            String room_key = ("room-" + location).toLowerCase();
+            boolean car_reserved = false;
+            boolean room_reserved = false;
+            String[] flight_key = new String[flightNumbers.size()];
+            boolean[] flight_reserved = new boolean[flightNumbers.size()];
+            for (int i = 0; i < flightNumbers.size(); i++ ) {
+                int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
+                flight_key[i] = ("flight-" + flightNum).toLowerCase();
+                flight_reserved[i] = false;
+            }
+            if (car) {
+                car_reserved = rm_car.reserveCar(id, customer, location);
+                if (!car_reserved) {
+                    return false;
+                }
+            }
+            if (room) {
+                room_reserved = rm_room.reserveRoom(id, customer, location);
+                if (!room_reserved) {
+                    if (car_reserved) {
+                        rm_car.freeItemRes(id, customer, car_key, 1);
+                    }
+                    return false;
+                }
+            }
+            for (int i = 0; i < flightNumbers.size(); i++ ) {
+                flight_reserved[i] = rm_flight.reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+                if (!flight_reserved[i]) {
+                    if (car_reserved) {
+                        rm_car.freeItemRes(id, customer, car_key, 1);
+                    }
+                    if (room_reserved) {
+                        rm_room.freeItemRes(id, customer, room_key, 1);
+                    }
+                    for (int j = 0; j < i; j++ ) {
+                        rm_flight.freeItemRes(id, customer, flight_key[j], 1);
+                    }
+                    return false;
+                }
+            }
+            if (car_reserved) {
+                cust.reserve( car_key, location, rm_car.queryCarsPrice(id, location));      
+                writeData( id, cust.getKey(), cust );
+            }
+            if (room_reserved) {
+                cust.reserve( room_key, location, rm_room.queryRoomsPrice(id, location));      
+                writeData( id, cust.getKey(), cust );
+            }
+            for (int i = 0; i < flightNumbers.size(); i++ ) {
+                int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
+                cust.reserve( flight_key[i], String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+                writeData( id, cust.getKey(), cust );
+            }
+            return true;
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
             return false;
-        } 
-        // Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
-        // int[] flights = new int[flightNumbers.size()];
-        // for (int i = 0; i < flightNumbers.size(); i++) {
-        //     try {
-        //         flights[i] = gi(flightNumbers.elementAt(i));
-        //     }
-        //     catch (Exception e){}
-        // }
-        // for (int i = 0; i < flightNumbers.size(); i++) {
-        //     if (f_cnt.containsKey(flights[i]))
-        //         f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
-        //     else
-        //         f_cnt.put(flights[i], 1);
-        // }
-
-        // if (car) {
-        //     // check if the item is available
-        //     int item = rm_car.queryCars(id, location);
-        //     if ( item == 0 )
-        //         return false;
-        // }
-
-        // if (room) {
-        //     // check if the item is available
-        //     int item = rm_room.queryRooms(id, location);
-        //     if ( item == 0 )
-        //         return false;
-        // }
-        // Set<Integer> keys = f_cnt.keySet();
-        // for (int key : keys) {
-        //     int item = rm_flight.queryFlight(id, key);
-        //     if (item < f_cnt.get(key))
-        //         return false;
-        // }
-        String car_key = ("car-" + location).toLowerCase();
-        String room_key = ("room-" + location).toLowerCase();
-        boolean car_reserved = false;
-        boolean room_reserved = false;
-        String[] flight_key = new String[flightNumbers.size()];
-        boolean[] flight_reserved = new boolean[flightNumbers.size()];
-        for (int i = 0; i < flightNumbers.size(); i++ ) {
-            int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
-            flight_key[i] = ("flight-" + flightNum).toLowerCase();
-            flight_reserved[i] = false;
         }
-        if (car) {
-            car_reserved = rm_car.reserveCar(id, customer, location);
-            if (!car_reserved) {
-                return false;
-            }
-        }
-        if (room) {
-            room_reserved = rm_room.reserveRoom(id, customer, location);
-            if (!room_reserved) {
-                if (car_reserved) {
-                    rm_car.freeItemRes(id, customer, car_key, 1);
-                }
-                return false;
-            }
-        }
-        for (int i = 0; i < flightNumbers.size(); i++ ) {
-            flight_reserved[i] = rm_flight.reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
-            if (!flight_reserved[i]) {
-                if (car_reserved) {
-                    rm_car.freeItemRes(id, customer, car_key, 1);
-                }
-                if (room_reserved) {
-                    rm_room.freeItemRes(id, customer, room_key, 1);
-                }
-                for (int j = 0; j < i; j++ ) {
-                    rm_flight.freeItemRes(id, customer, flight_key[j], 1);
-                }
-                return false;
-            }
-        }
-        if (car_reserved) {
-            cust.reserve( car_key, location, rm_car.queryCarsPrice(id, location));      
-            writeData( id, cust.getKey(), cust );
-        }
-        if (room_reserved) {
-            cust.reserve( room_key, location, rm_room.queryRoomsPrice(id, location));      
-            writeData( id, cust.getKey(), cust );
-        }
-        for (int i = 0; i < flightNumbers.size(); i++ ) {
-            int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
-            cust.reserve( flight_key[i], String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
-            writeData( id, cust.getKey(), cust );
-        }
-        return true;
     }
     // Convert Object to int
     public int gi(Object temp) throws Exception {
@@ -567,17 +679,75 @@ public class MiddleWareImpl implements MiddleWare
     }
     // Convert Object to String
     public String gs(Object temp) throws Exception {
-    try {    
-        return (String)temp;
-        }
-    catch (Exception e) {
-        throw e;
-        }
+        try {    
+            return (String)temp;
+            }
+        catch (Exception e) {
+            throw e;
+            }
     }
 
     public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
         throws RemoteException
     {
         return false;
+    }
+
+    public int start() throws RemoteException {
+        this.txn_counter ++;
+        this.active_txn.add(txn_counter);
+        return txn_counter;
+    }
+
+    public boolean commit(int transactionId) 
+        throws RemoteException, TransactionAbortedException, InvalidTransactionException
+    {
+        if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
+            Trace.warn("RM::Commit failed--Invalid transactionId");
+            throw new InvalidTransactionException(transactionId);
+        }
+        else
+        {
+            Trace.info("RM::Committing transaction : " + transactionId);
+            if (mw_locks.UnlockAll(transactionId)) {
+                while (active_txn.contains(transactionId)) {
+                    active_txn.remove(transactionId);
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+
+    public void abort(int transactionId) throws RemoteException, InvalidTransactionException
+    {
+        if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
+            Trace.warn("RM::Commit failed--Invalid transactionId");
+            throw new InvalidTransactionException(transactionId);
+        }
+        else {
+            mw_locks.UnlockAll(transactionId);
+            while (active_txn.contains(transactionId)) {
+                    active_txn.remove(transactionId);
+            }
+        }
+    }
+
+    public boolean shutdown() throws RemoteException
+    {
+        if (!active_txn.isEmpty()) {
+            Trace.warn("RM::Shutdown failed--transaction active");
+            return false;
+        }
+        else
+        {
+            /* TODO: store data? */
+            if (!rm_car.shutdown()) return false;
+            if (!rm_room.shutdown()) return false;
+            if (!rm_flight.shutdown()) return false;
+        }
+        return true;
     }
 }

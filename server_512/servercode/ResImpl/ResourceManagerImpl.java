@@ -26,7 +26,7 @@ public class ResourceManagerImpl implements ResourceManager
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
-        int port = 1099;
+        int port = 2199;
         String rm_name = "name";
 
         if (args.length == 2) {
@@ -585,10 +585,34 @@ public class ResourceManagerImpl implements ResourceManager
 
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-        return false;
+        if (transactionId < 1 ) {
+            Trace.warn("RM::Commit failed--Invalid transactionId");
+            throw new InvalidTransactionException(transactionId);
+        }
+        else
+        {
+            Trace.info("RM::Committing transaction : " + transactionId);
+            if (rm_locks.UnlockAll(transactionId)) {
+                // while (active_txn.contains(transactionId)) {
+                // active_txn.remove(transactionId);
+                // }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
     }
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
-    { }
+    {
+        if (transactionId < 1) {
+            Trace.warn("RM::Commit failed--Invalid transactionId");
+            throw new InvalidTransactionException(transactionId);
+        }
+        else {
+            rm_locks.UnlockAll(transactionId);
+        }
+    }
     public boolean shutdown() throws RemoteException
     {
         /* TODO: store data? */

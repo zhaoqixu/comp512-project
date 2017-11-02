@@ -31,7 +31,7 @@ public class MiddleWareImpl implements MiddleWare
         String server_room = "localhost";
 
         int port_local = 1088;
-        int port = 1099;
+        int port = 2199;
 
 
         if (args.length == 3) {
@@ -709,10 +709,28 @@ public class MiddleWareImpl implements MiddleWare
         else
         {
             Trace.info("RM::Committing transaction : " + transactionId);
-            if (mw_locks.UnlockAll(transactionId)) {
-                while (active_txn.contains(transactionId)) {
-                    active_txn.remove(transactionId);
+            try {
+                if (!rm_flight.commit(transactionId)) {
+                    return false;
                 }
+                if (!rm_car.commit(transactionId)) {
+                    // recover rm_flight
+                    return false;
+                }
+                if (!rm_room.commit(transactionId)) {
+                    // recover rm_flight
+                    // recover rm_car
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+            if (mw_locks.UnlockAll(transactionId)) {
+                // while (active_txn.contains(transactionId)) {
+                active_txn.remove(transactionId);
+                // }
                 return true;
             }
             else {

@@ -16,7 +16,7 @@ import java.rmi.RMISecurityManager;
 public class Transaction
 {
     protected int xid;
-    protected int op_count;
+    public int op_count;
 
     public Transaction(int transactionId)
     {

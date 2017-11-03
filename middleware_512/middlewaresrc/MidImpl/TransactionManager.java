@@ -18,12 +18,13 @@ public class TransactionManager
     public static final int WRITE = 1;
     protected static LockManager mw_locks = new LockManager();
     protected static int txn_counter = 0;
-    protected static Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
+    public static Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
 
     public int start() throws RemoteException {
         this.txn_counter ++;
         Transaction txn = new Transaction(txn_counter);
-        //
+        TimeThread tt = new TimeThread(this, txn_counter);
+        tt.start();
         this.active_txn.put(txn_counter, txn);
         return txn_counter;
     }

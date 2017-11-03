@@ -19,8 +19,14 @@ class TimeThread extends Thread {
                     start = System.currentTimeMillis();
                 }
                 else{
-                    tm.abort(txnid); //time out
-                    break;
+                    try {
+                        tm.abort(txnid); //time out
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        System.out.println(e.getMessage());
+                    }
                 }
             }
         }

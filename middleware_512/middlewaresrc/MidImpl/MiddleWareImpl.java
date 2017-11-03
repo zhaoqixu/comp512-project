@@ -21,6 +21,7 @@ public class MiddleWareImpl implements MiddleWare
 	static ResourceManager rm_flight = null;
     static ResourceManager rm_car = null;
     static ResourceManager rm_room = null;
+    static TransactionManager txn_manager = null;
 
     protected RMHashtable m_itemHT = new RMHashtable();
 
@@ -113,6 +114,7 @@ public class MiddleWareImpl implements MiddleWare
         this.mw_locks = new LockManager();
         this.txn_counter = 0; // should be moved to TM
         this.active_txn = new ArrayList<Integer>(); // should be moved to TM
+        this.txn_manager = new TransactionManager();
     }
 
     // Reads a data item

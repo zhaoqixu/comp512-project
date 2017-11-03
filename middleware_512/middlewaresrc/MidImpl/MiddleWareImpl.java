@@ -18,10 +18,10 @@ public class MiddleWareImpl implements MiddleWare
     // protected LockManager mw_locks;
     // protected int txn_counter; // should be moved to TM
     // protected ArrayList<Integer> active_txn; // should be moved to TM
-	static ResourceManager rm_flight = null;
-    static ResourceManager rm_car = null;
-    static ResourceManager rm_room = null;
-    static TransactionManager txn_manager = null;
+	protected static ResourceManager rm_flight = null;
+    protected static ResourceManager rm_car = null;
+    protected static ResourceManager rm_room = null;
+    static TransactionManager txn_manager = new TransactionManager();
 
     protected RMHashtable m_itemHT = new RMHashtable();
 
@@ -111,10 +111,6 @@ public class MiddleWareImpl implements MiddleWare
     }
      
     public MiddleWareImpl() throws RemoteException {
-        this.mw_locks = new LockManager();
-        this.txn_counter = 0; // should be moved to TM
-        this.active_txn = new ArrayList<Integer>(); // should be moved to TM
-        this.txn_manager = new TransactionManager();
     }
 
     // Reads a data item
@@ -145,6 +141,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
         throws RemoteException
     {
+        try {
+            String s = "flight-" + flightNum;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
         return rm_flight.addFlight(id,flightNum,flightSeats,flightPrice);
     }
 
@@ -153,6 +162,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteFlight(int id, int flightNum)
         throws RemoteException
     {
+        try {
+            String s = "flight-" + flightNum;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
         return rm_flight.deleteFlight(id, flightNum);
     }
 
@@ -163,6 +185,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean addRooms(int id, String location, int count, int price)
         throws RemoteException
     {
+        try {
+            String s = "room-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
     	return rm_room.addRooms(id, location, count, price);
     }
 
@@ -170,6 +205,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteRooms(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "room-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
         return rm_room.deleteRooms(id, location);
     }
 
@@ -178,6 +226,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean addCars(int id, String location, int count, int price)
         throws RemoteException
     {
+        try {
+            String s = "car-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
         return rm_car.addCars(id, location, count, price);
     }
 
@@ -186,6 +247,19 @@ public class MiddleWareImpl implements MiddleWare
     public boolean deleteCars(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "car-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return false;
+        }
     	return rm_car.deleteCars(id, location);
     }
 
@@ -195,6 +269,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryFlight(int id, int flightNum)
         throws RemoteException
     {
+        try {
+            String s = "flight-" + flightNum;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_flight.queryFlight(id, flightNum);
     }
 
@@ -216,6 +303,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryFlightPrice(int id, int flightNum )
         throws RemoteException
     {
+        try {
+            String s = "flight-" + flightNum;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_flight.queryFlightPrice(id, flightNum);
     }
 
@@ -224,6 +324,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryRooms(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "room-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_room.queryRooms(id, location);
     }
 
@@ -233,6 +346,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryRoomsPrice(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "room-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_room.queryRoomsPrice(id, location);
     }
 
@@ -241,6 +367,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryCars(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "car-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_car.queryCars(id, location);
     }
 
@@ -249,6 +388,19 @@ public class MiddleWareImpl implements MiddleWare
     public int queryCarsPrice(int id, String location)
         throws RemoteException
     {
+        try {
+            String s = "car-" + location;
+			String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, key, READ))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return -1;
+            }
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            return -1;
+        }
     	return rm_car.queryCarsPrice(id, location);
     }
 
@@ -267,7 +419,8 @@ public class MiddleWareImpl implements MiddleWare
     {
         try {
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), READ))
+            String key = Customer.getKey(customerID);
+            if (!txn_manager.requestLock(id, key, READ))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return "";
@@ -302,7 +455,7 @@ public class MiddleWareImpl implements MiddleWare
                                     String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                                     String.valueOf( Math.round( Math.random() * 100 + 1 )));
             Customer cust = new Customer( cid );
-            if (!mw_locks.Lock(id, cust.getKey(), WRITE))
+            if (!txn_manager.requestLock(id, cust.getKey(), WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return -1;
@@ -323,7 +476,7 @@ public class MiddleWareImpl implements MiddleWare
     {
         try {
         	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
@@ -357,7 +510,7 @@ public class MiddleWareImpl implements MiddleWare
     {
         try {
         	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
@@ -373,7 +526,11 @@ public class MiddleWareImpl implements MiddleWare
                     String reservedkey = (String) (e.nextElement());
                     ReservedItem reserveditem = cust.getReservedItem(reservedkey);
                     int reservedCount = reserveditem.getCount();
-
+                    if (!txn_manager.requestLock(id, reservedkey, WRITE))
+                    {
+                        Trace.warn("RM::Lock failed--Can not acquire lock");
+                        return false;
+                    }
                     switch (reservedkey.charAt(0)) {
                     	case 'c':
                     		rm_car.freeItemRes(id, customerID, reservedkey, reservedCount);
@@ -434,13 +591,15 @@ public class MiddleWareImpl implements MiddleWare
         throws RemoteException
     {
         try {
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            String s = "car-" + location;
+            String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
             }
         	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("car-" + location).toLowerCase();
+            // String key = ("car-" + location).toLowerCase();
 
             if ( cust == null ) {
                 Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
@@ -467,13 +626,15 @@ public class MiddleWareImpl implements MiddleWare
         throws RemoteException
     {
         try {
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            String s = "room-" + location;
+            String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
             }
             Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("room-" + location).toLowerCase();
+            // String key = ("room-" + location).toLowerCase();
             if ( cust == null ) {
                 Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
                 return false;
@@ -498,13 +659,15 @@ public class MiddleWareImpl implements MiddleWare
         throws RemoteException
     {
         try {
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), WRITE))
+            String s = "flight-" + flightNum;
+            String key = s.toLowerCase();
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
             }
             Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-            String key = ("flight-" + flightNum).toLowerCase();
+            // String key = ("flight-" + flightNum).toLowerCase();
 
             if ( cust == null ) {
                 Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
@@ -531,7 +694,7 @@ public class MiddleWareImpl implements MiddleWare
     {
         try {
             Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
-            if (!mw_locks.Lock(id, Customer.getKey(customerID), READ))
+            if (!txn_manager.requestLock(id, Customer.getKey(customerID), READ))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return null;
@@ -557,7 +720,7 @@ public class MiddleWareImpl implements MiddleWare
             return false;
         }
         try {
-            if (!mw_locks.Lock(id, Customer.getKey(customer), WRITE))
+            if (!txn_manager.requestLock(id, Customer.getKey(customer), WRITE))
             {
                 Trace.warn("RM::Lock failed--Can not acquire lock");
                 return false;
@@ -601,7 +764,17 @@ public class MiddleWareImpl implements MiddleWare
             //         return false;
             // }
             String car_key = ("car-" + location).toLowerCase();
+            if (!txn_manager.requestLock(id, car_key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
             String room_key = ("room-" + location).toLowerCase();
+            if (!txn_manager.requestLock(id, room_key, WRITE))
+            {
+                Trace.warn("RM::Lock failed--Can not acquire lock");
+                return false;
+            }
             boolean car_reserved = false;
             boolean room_reserved = false;
             String[] flight_key = new String[flightNumbers.size()];
@@ -609,6 +782,11 @@ public class MiddleWareImpl implements MiddleWare
             for (int i = 0; i < flightNumbers.size(); i++ ) {
                 int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
                 flight_key[i] = ("flight-" + flightNum).toLowerCase();
+                if (!txn_manager.requestLock(id, flight_key[i], WRITE))
+                {
+                    Trace.warn("RM::Lock failed--Can not acquire lock");
+                    return false;
+                }
                 flight_reserved[i] = false;
             }
             if (car) {
@@ -757,17 +935,6 @@ public class MiddleWareImpl implements MiddleWare
 
     public boolean shutdown() throws RemoteException
     {
-        if (!active_txn.isEmpty()) {
-            Trace.warn("RM::Shutdown failed--transaction active");
-            return false;
-        }
-        else
-        {
-            /* TODO: store data? */
-            if (!rm_car.shutdown()) return false;
-            if (!rm_room.shutdown()) return false;
-            if (!rm_flight.shutdown()) return false;
-        }
-        return true;
+        return txn_manager.shutdown();
     }
 }

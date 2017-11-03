@@ -15,9 +15,9 @@ public class MiddleWareImpl implements MiddleWare
 {
     public static final int READ = 0;
     public static final int WRITE = 1;
-    protected LockManager mw_locks;
-    protected int txn_counter; // should be moved to TM
-    protected ArrayList<Integer> active_txn; // should be moved to TM
+    // protected LockManager mw_locks;
+    // protected int txn_counter; // should be moved to TM
+    // protected ArrayList<Integer> active_txn; // should be moved to TM
 	static ResourceManager rm_flight = null;
     static ResourceManager rm_car = null;
     static ResourceManager rm_room = null;
@@ -696,63 +696,63 @@ public class MiddleWareImpl implements MiddleWare
     }
 
     public int start() throws RemoteException {
-        this.txn_counter ++;
-        this.active_txn.add(txn_counter);
-        return txn_counter;
+        return txn_manager.start();
     }
 
     public boolean commit(int transactionId) 
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-        if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
-            Trace.warn("RM::Commit failed--Invalid transactionId");
-            throw new InvalidTransactionException(transactionId);
-        }
-        else
-        {
-            Trace.info("RM::Committing transaction : " + transactionId);
-            try {
-                if (!rm_flight.commit(transactionId)) {
-                    return false;
-                }
-                if (!rm_car.commit(transactionId)) {
-                    // recover rm_flight
-                    return false;
-                }
-                if (!rm_room.commit(transactionId)) {
-                    // recover rm_flight
-                    // recover rm_car
-                    return false;
-                }
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
-            if (mw_locks.UnlockAll(transactionId)) {
-                // while (active_txn.contains(transactionId)) {
-                active_txn.remove(transactionId);
-                // }
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
+        // if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
+        //     Trace.warn("RM::Commit failed--Invalid transactionId");
+        //     throw new InvalidTransactionException(transactionId);
+        // }
+        // else
+        // {
+        //     Trace.info("RM::Committing transaction : " + transactionId);
+        //     try {
+        //         if (!rm_flight.commit(transactionId)) {
+        //             return false;
+        //         }
+        //         if (!rm_car.commit(transactionId)) {
+        //             // recover rm_flight
+        //             return false;
+        //         }
+        //         if (!rm_room.commit(transactionId)) {
+        //             // recover rm_flight
+        //             // recover rm_car
+        //             return false;
+        //         }
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         return false;
+        //     }
+        //     if (mw_locks.UnlockAll(transactionId)) {
+        //         // while (active_txn.contains(transactionId)) {
+        //         active_txn.remove(transactionId);
+        //         // }
+        //         return true;
+        //     }
+        //     else {
+        //         return false;
+        //     }
+        // }
+         return txn_manager.commit(transactionId);
     }
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
-            Trace.warn("RM::Commit failed--Invalid transactionId");
-            throw new InvalidTransactionException(transactionId);
-        }
-        else {
-            mw_locks.UnlockAll(transactionId);
-            while (active_txn.contains(transactionId)) {
-                    active_txn.remove(transactionId);
-            }
-        }
+        // if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
+        //     Trace.warn("RM::Commit failed--Invalid transactionId");
+        //     throw new InvalidTransactionException(transactionId);
+        // }
+        // else {
+        //     mw_locks.UnlockAll(transactionId);
+        //     while (active_txn.contains(transactionId)) {
+        //             active_txn.remove(transactionId);
+        //     }
+        // }
+        txn_manager.abort(transactionId);
     }
 
     public boolean shutdown() throws RemoteException

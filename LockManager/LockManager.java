@@ -233,7 +233,7 @@ public class LockManager
                         throw new RedundantLockRequestException(dataObj.getXId(), "Redundant WRITE lock request");
                     }
                 }
-            } 
+            }
             else {
                 if (dataObj.getLockType() == DataObj.READ) {
                     if (dataObj2.getLockType() == DataObj.WRITE) {

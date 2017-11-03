@@ -3,20 +3,24 @@ package MidImpl;
 class TimeThread extends Thread {
     TransactionManager tm;
     int txnid;
-    int time_to_live = 30000;
+    int time_to_live = 20000;
+
 
     public TimeThread (TransactionManager tm, int txnid) {
         this.tm = tm;
-	    this.txnid = txnid;
+        this.txnid = txnid;
     }
 
     public void run () {
-        long start = System.currentTimeMillis();
+        int old_op_count = 0;
+        // long start = System.currentTimeMillis();
         while(true){
-            long elapsedTimeMills = System.currentTimeMillis()-start;
+            sleep(20000);
+            // long elapsedTimeMills = System.currentTimeMillis()-start;
             if (elapsedTimeMills > time_to_live){
-                if(tm.active_txn.get(txnid).op_count > 0){
-                    start = System.currentTimeMillis();
+                if(tm.active_txn.get(txnid).op_count > old_op_count){
+                    // start = System.currentTimeMillis();
+                    old_op_count = tm.active_txn.get(txnid).op_count;
                 }
                 else{
                     try {

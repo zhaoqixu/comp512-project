@@ -13,7 +13,7 @@ public class client
 {
     static String message = "blank";
     static MiddleWare mw = null;
-
+    HashSet<Integer> txn_ids = new HashSet<Integer>();
     public static void main(String args[])
     {
         client obj = new client();
@@ -30,7 +30,11 @@ public class client
         int numRooms;
         int numCars;
         String location;
-
+        HashSet<Integer> cmd_no_xid = new HashSet<Integer>();
+        cmd_no_xid.add(1);
+        cmd_no_xid.add(21);
+        cmd_no_xid.add(23);  
+        cmd_no_xid.add(26);  
 
         String server = "localhost";
         int port = 1099;
@@ -93,7 +97,24 @@ public class client
         //remove heading and trailing white space
         command=command.trim();
         arguments=obj.parse(command);
-        
+
+        try {
+            if (!cmd_no_xid.contains(obj.findChoice((String)arguments.elementAt(0))) && !obj.txn_ids.contains(obj.getInt(arguments.elementAt(1)))) {
+                System.out.println("Transaction ID provided is not valid");
+                System.out.println("Valid transaction IDs are: ");
+                Iterator<Integer> itr = obj.txn_ids.iterator();
+                while(itr.hasNext()){
+                    System.out.print(itr.next() + ", ");
+                }
+                System.out.println();
+                continue;
+            }
+        }
+        catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
         //decide which of the commands this was
         switch(obj.findChoice((String)arguments.elementAt(0))){
         case 1: //help section
@@ -599,6 +620,7 @@ public class client
             System.out.println("Starting a transaction session...");
             try{
             int transactionId=mw.start();
+            obj.txn_ids.add(transactionId);
             System.out.println("Transaction ID granted :"+transactionId);
             }
             catch(Exception e){
@@ -617,10 +639,13 @@ public class client
             try{
             int transactionId=obj.getInt(arguments.elementAt(1));
             boolean committed=mw.commit(transactionId);
-            if (committed)
+            if (committed) {
+                obj.txn_ids.remove(transactionId);
                 System.out.println("Transaction ID :"+transactionId+" committed");
-            else
+            }
+            else {
                 System.out.println("Commit failed");
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -638,10 +663,13 @@ public class client
             try{
             int transactionId=obj.getInt(arguments.elementAt(1));
             boolean aborted=mw.commit(transactionId);
-            if (aborted)
+            if (aborted) {
+                obj.txn_ids.remove(transactionId);
                 System.out.println("Transaction ID :"+transactionId+" aborted");
-            else
+            }
+            else {
                 System.out.println("Abort failed");
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -957,7 +985,6 @@ public class client
     System.out.println("The number of arguments provided in this command are wrong.");
     System.out.println("Type help, <commandname> to check usage of this command.");
     }
-
 
 
     public int getInt(Object temp) throws Exception {

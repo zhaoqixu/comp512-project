@@ -804,14 +804,9 @@ public class client
             try{
             Id=obj.getInt(arguments.elementAt(1));
             try {
-            boolean aborted=mw.commit(Id);
-            if (aborted) {
-                obj.txn_ids.remove(Id);
-                System.out.println("Transaction ID :"+Id+" aborted");
-            }
-            else {
-                System.out.println("Abort failed");
-            }
+            mw.abort(Id);
+            obj.txn_ids.remove(Id);
+            System.out.println("Transaction ID :"+Id+" aborted");
             }
             catch (NullPointerException npe) {
                 System.out.println("Can not find ID "+ Id + " on middleware.");

@@ -78,13 +78,27 @@ public class TransactionManager
         return true;
     }
 
-    public boolean requestLock(int xid, String strData, int lockType) throws DeadlockException
+    public boolean requestLock(int xid, String strData, int lockType)
     {
         Transaction t = active_txn.get(xid);
         t.op_count++;
         active_txn.put(xid, t);
-        //System.out.println(active_txn.get(xid).op_count);        
-        return mw_locks.Lock(xid, strData, lockType);
+        //System.out.println(active_txn.get(xid).op_count);
+        try {
+            return mw_locks.Lock(xid, strData, lockType);
+        }
+        catch (DeadlockException dle) {
+            Trace.warn("RM::Lock failed--Deadlock exist");
+            try {
+            abort(xid);
+            }
+            catch (Exception e){
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+            Trace.warn("RM::Transaction ID aborted");
+            return false;
+        }
     }
 }
 
@@ -110,19 +124,24 @@ class TimeThread extends Thread {
                 // writer.println(tm.active_txn.get(txnid).op_count);
                 // writer.println(old_count);                
                 // writer.println(elapsedTimeMills);
-                if(tm.active_txn.get(txnid).op_count > old_count){
-                    start = System.currentTimeMillis();
-                    old_count = tm.active_txn.get(txnid).op_count;
+                try {
+                    if(tm.active_txn.get(txnid).op_count > old_count){
+                        start = System.currentTimeMillis();
+                        old_count = tm.active_txn.get(txnid).op_count;
+                    }
+                    else{
+                        try {
+                            tm.abort(txnid); //time out
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println(e.getMessage());
+                        }
+                    }
                 }
-                else{
-                    try {
-                        tm.abort(txnid); //time out
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println(e.getMessage());
-                    }
+                catch (NullPointerException npe) {
+                    return;
                 }
             }
         }

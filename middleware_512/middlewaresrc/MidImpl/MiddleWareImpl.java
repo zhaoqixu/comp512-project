@@ -943,7 +943,7 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("MW::Shutting down RoomRm ...");
             rm_room.shutdown();
             Trace.warn("MW::Shutting down middleware ...");
-            Registry registry = LocateRegistry.getRegistry(1099);
+            Registry registry = LocateRegistry.getRegistry(1088);
             try {
               registry.unbind("TripMiddleWare");
               UnicastRemoteObject.unexportObject(this, false);

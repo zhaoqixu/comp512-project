@@ -4,7 +4,7 @@ import MidImpl.InvalidTransactionException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
-
+import java.rmi.RemoteException;
 import java.util.*;
 import java.io.*;
 
@@ -833,13 +833,19 @@ public class client
             }
             try {
             System.out.println("Shutdown middleware...");
-            if (mw.shutdown()) {
+            // try {
+            if(mw.shutdown()) {
+                System.out.println("Shutdown succeed...");
                 System.out.println("Quitting client...");
                 System.exit(1);
             }
-            else {
+            else{
                 System.out.println("Shutdown failed...");
             }
+            // }
+            // catch(RemoteException re) {
+                
+            // }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");

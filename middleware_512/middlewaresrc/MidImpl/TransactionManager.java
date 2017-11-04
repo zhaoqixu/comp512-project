@@ -5,7 +5,7 @@ import MidInterface.*;
 import LockManager.*;
 
 import java.util.*;
-import java.io.PrintWriter;
+// import java.io.PrintWriter;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -99,17 +99,17 @@ class TimeThread extends Thread {
     }
 
     public void run () {
-        try{
+        // try{
         long start = System.currentTimeMillis();
-        PrintWriter writer = new PrintWriter("trace.txt", "UTF-8");
+        // PrintWriter writer = new PrintWriter("trace.txt", "UTF-8");
         int old_count = 0;
         while(true){
             long elapsedTimeMills = System.currentTimeMillis()-start;
             if (elapsedTimeMills > time_to_live){
-                writer.println("------------------------------------");                
-                writer.println(tm.active_txn.get(txnid).op_count);
-                writer.println(old_count);                
-                writer.println(elapsedTimeMills);
+                // writer.println("------------------------------------");                
+                // writer.println(tm.active_txn.get(txnid).op_count);
+                // writer.println(old_count);                
+                // writer.println(elapsedTimeMills);
                 if(tm.active_txn.get(txnid).op_count > old_count){
                     start = System.currentTimeMillis();
                     old_count = tm.active_txn.get(txnid).op_count;
@@ -126,8 +126,8 @@ class TimeThread extends Thread {
                 }
             }
         }
-        writer.close();
-    }
-    catch(Exception e){}
+        // writer.close();
+    // }
+    // catch(Exception e){}
     }
 }

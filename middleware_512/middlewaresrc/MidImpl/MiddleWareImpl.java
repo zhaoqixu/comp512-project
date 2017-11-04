@@ -956,7 +956,7 @@ public class MiddleWareImpl implements MiddleWare
               public void run() {
                 System.out.print("Shutting down...");
                 try {
-                  sleep(2000);
+                  sleep(1000);
                 } catch (InterruptedException e) {
                   // I don't care
                 }

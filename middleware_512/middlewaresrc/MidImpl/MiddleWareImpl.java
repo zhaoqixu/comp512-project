@@ -935,6 +935,41 @@ public class MiddleWareImpl implements MiddleWare
 
     public boolean shutdown() throws RemoteException
     {
-        return txn_manager.shutdown();
+        if (txn_manager.shutdown()) {
+            Trace.warn("MW::Shutting down FlightRM ...");
+            rm_flight.shutdown();
+            Trace.warn("MW::Shutting down CarRM ...");
+            rm_car.shutdown();
+            Trace.warn("MW::Shutting down RoomRm ...");
+            rm_room.shutdown();
+            Trace.warn("MW::Shutting down middleware ...");
+            Registry registry = LocateRegistry.getRegistry(1099);
+            try {
+              registry.unbind("TripMiddleWare");
+              UnicastRemoteObject.unexportObject(this, false);
+            } catch (Exception e) {
+              throw new RemoteException("Could not unregister middleware, quiting anyway", e);
+            }
+          
+            new Thread() {
+              @Override
+              public void run() {
+                System.out.print("Shutting down...");
+                try {
+                  sleep(2000);
+                } catch (InterruptedException e) {
+                  // I don't care
+                }
+                System.out.println("done");
+                System.exit(0);
+              }
+          
+            }.start();
+            return true;
+        }
+        else {
+            Trace.warn("MW::Shutdown failed");
+            return false;
+        }
     }
 }

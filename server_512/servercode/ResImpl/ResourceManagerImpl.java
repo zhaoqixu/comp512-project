@@ -17,12 +17,12 @@ import java.rmi.RMISecurityManager;
 public class ResourceManagerImpl implements ResourceManager 
 {
     protected RMHashtable m_itemHT = new RMHashtable();
-
+    protected static String rm_name = "name";
+    
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
         int port = 2199;
-        String rm_name = "name";
 
         if (args.length == 2) {
             server = server + ":" + args[0];
@@ -518,7 +518,28 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean shutdown() throws RemoteException
     {
         /* TODO: store data? */
-        System.exit(-1);
+        Registry registry = LocateRegistry.getRegistry(2199);
+        try {
+          registry.unbind(rm_name);
+          UnicastRemoteObject.unexportObject(this, false);
+        } catch (Exception e) {
+          throw new RemoteException("Could not unregister service, quiting anyway", e);
+        }
+      
+        new Thread() {
+          @Override
+          public void run() {
+            System.out.print("Shutting down...");
+            try {
+              sleep(2000);
+            } catch (InterruptedException e) {
+              // I don't care
+            }
+            System.out.println("done");
+            System.exit(0);
+          }
+      
+        }.start();
         return true;
     }
 }

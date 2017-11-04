@@ -23,8 +23,8 @@ public class TransactionManager
     public int start() throws RemoteException {
         this.txn_counter ++;
         Transaction txn = new Transaction(txn_counter);
-        TimeThread tt = new TimeThread(this, txn_counter);
-        tt.start();
+        // TimeThread tt = new TimeThread(this, txn_counter);
+        // tt.start();
         this.active_txn.put(txn_counter, txn);
         return txn_counter;
     }

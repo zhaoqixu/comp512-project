@@ -5,6 +5,7 @@ import MidInterface.*;
 import LockManager.*;
 
 import java.util.*;
+import java.io.PrintWriter;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -23,8 +24,8 @@ public class TransactionManager
     public int start() throws RemoteException {
         this.txn_counter ++;
         Transaction txn = new Transaction(txn_counter);
-        // TimeThread tt = new TimeThread(this, txn_counter);
-        // tt.start();
+        TimeThread tt = new TimeThread(this, txn_counter);
+        tt.start();
         this.active_txn.put(txn_counter, txn);
         return txn_counter;
     }
@@ -82,6 +83,7 @@ public class TransactionManager
         Transaction t = active_txn.get(xid);
         t.op_count++;
         active_txn.put(xid, t);
+        //System.out.println(active_txn.get(xid).op_count);        
         return mw_locks.Lock(xid, strData, lockType);
     }
 }
@@ -97,12 +99,20 @@ class TimeThread extends Thread {
     }
 
     public void run () {
+        try{
         long start = System.currentTimeMillis();
+        PrintWriter writer = new PrintWriter("trace.txt", "UTF-8");
+        int old_count = 0;
         while(true){
             long elapsedTimeMills = System.currentTimeMillis()-start;
             if (elapsedTimeMills > time_to_live){
-                if(tm.active_txn.get(txnid).op_count > 0){
+                writer.println("------------------------------------");                
+                writer.println(tm.active_txn.get(txnid).op_count);
+                writer.println(old_count);                
+                writer.println(elapsedTimeMills);
+                if(tm.active_txn.get(txnid).op_count > old_count){
                     start = System.currentTimeMillis();
+                    old_count = tm.active_txn.get(txnid).op_count;
                 }
                 else{
                     try {
@@ -116,5 +126,8 @@ class TimeThread extends Thread {
                 }
             }
         }
+        writer.close();
+    }
+    catch(Exception e){}
     }
 }

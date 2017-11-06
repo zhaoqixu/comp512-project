@@ -542,4 +542,109 @@ public class ResourceManagerImpl implements ResourceManager
         }.start();
         return true;
     }
+
+    public boolean removeFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    throws RemoteException
+    {
+        Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") called" );
+        Flight curObj = (Flight) readData( id, Flight.getKey(flightNum));
+        // Check if there is such an item in the storage
+        if ( curObj == null ) {
+            Trace.warn("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") failed--item doesn't exist" );
+            return false;
+        } else {
+            if (curObj.getCount() < flightSeats) {
+                Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") failed-- insufficient count" );
+                return false;
+            }
+            else if (curObj.getCount() == flightSeats) {
+                removeData(id, curObj.getKey());
+                Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") item deleted" );
+                return true;
+            }
+            else {
+                curObj.setCount(curObj.getCount() - flightSeats);
+                curObj.setPrice(old_flightPrice);
+                writeData( id, curObj.getKey(), curObj );
+                Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") item removed" );
+                return true;
+            }
+        } // if
+    }
+
+    public boolean removeRooms(int id, String location, int count, int old_price)
+    throws RemoteException
+    {
+        Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") called" );
+        Hotel curObj = (Hotel) readData( id, Hotel.getKey(location));
+        // Check if there is such an item in the storage
+        if ( curObj == null ) {
+            Trace.warn("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") failed--item doesn't exist" );
+            return false;
+        } else {
+            if (curObj.getCount() < count) {
+                Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") failed-- insufficient count" );
+                return false;
+            }
+            else if (curObj.getCount() == count) {
+                removeData(id, curObj.getKey());
+                Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") item deleted" );
+                return true;
+            }
+            else {
+                curObj.setCount(curObj.getCount() - count);
+                curObj.setPrice(old_price);
+                writeData( id, curObj.getKey(), curObj );
+                Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") item removed" );
+                return true;
+            }
+        } // if
+    }
+
+    public boolean removeCars(int id, String location, int count, int old_price)
+    throws RemoteException
+    {
+        Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") called" );
+        Car curObj = (Car) readData( id, Car.getKey(location));
+        // Check if there is such an item in the storage
+        if ( curObj == null ) {
+            Trace.warn("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") failed--item doesn't exist" );
+            return false;
+        } else {
+            if (curObj.getCount() < count) {
+                Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") failed-- insufficient count" );
+                return false;
+            }
+            else if (curObj.getCount() == count) {
+                removeData(id, curObj.getKey());
+                Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") item deleted" );
+                return true;
+            }
+            else {
+                curObj.setCount(curObj.getCount() - count);
+                curObj.setPrice(old_price);
+                writeData( id, curObj.getKey(), curObj );
+                Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") item removed" );
+                return true;
+            }
+        } // if
+    }
+
+    public boolean recoverFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    throws RemoteException
+    {
+        return addFlight(id, flightNum, flightSeats, old_flightPrice);
+    }
+
+    public boolean recoverRooms(int id, String location, int count, int old_price)
+    throws RemoteException
+    {
+        return addRooms(id, location, count, old_price);
+    }
+
+    public boolean recoverCars(int id, String location, int count, int old_price)
+    throws RemoteException
+    {
+        return addCars(id, location, count, old_price);
+    }
 }

@@ -34,7 +34,6 @@ public class MiddleWareImpl implements MiddleWare
         int port_local = 1088;
         int port = 2199;
 
-
         if (args.length == 3) {
             server_flight = args[0];
             server_car = args[1];
@@ -209,7 +208,14 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("RM::Lock failed--Can not acquire lock");
             return false;
         }
-        return rm_car.addCars(id, location, count, price);
+        int old_price = rm_car.queryCarsPrice(id, location);
+        if (rm_car.addCars(id, location, count, price))
+        {
+            String command = "newcar";
+            txn_manager.active_txn.get(id).addHistory(command, location, count, old_price);
+            return true;
+        }
+        else return false;
     }
 
 
@@ -224,9 +230,17 @@ public class MiddleWareImpl implements MiddleWare
             Trace.warn("RM::Lock failed--Can not acquire lock");
             return false;
         }
-    	return rm_car.deleteCars(id, location);
+        //return rm_car.deleteCars(id, location);
+        int old_price = rm_car.queryCarsPrice(id, location);
+        int old_count = rm_car.queryCars(id, location);
+        if (rm_car.deleteCars(id, location))
+        {
+            String command = "deletecar";
+            txn_manager.active_txn.get(id).addHistory(command, location, old_count, old_price);
+            return true;
+        }
+        else return false;
     }
-
 
 
     // Returns the number of empty seats on this flight
@@ -511,6 +525,8 @@ public class MiddleWareImpl implements MiddleWare
             if (rm_car.reserveCar(id, customerID, location) == true){
                 cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
                 writeData( id, cust.getKey(), cust );
+                String command = "reservecar";
+                txn_manager.active_txn.get(id).addHistory(command, customerID, key, location);
                 return true;
             } else {
                 Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
@@ -754,56 +770,31 @@ public class MiddleWareImpl implements MiddleWare
     public boolean commit(int transactionId) 
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-        // if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
-        //     Trace.warn("RM::Commit failed--Invalid transactionId");
-        //     throw new InvalidTransactionException(transactionId);
-        // }
-        // else
-        // {
-        //     Trace.info("RM::Committing transaction : " + transactionId);
-        //     try {
-        //         if (!rm_flight.commit(transactionId)) {
-        //             return false;
-        //         }
-        //         if (!rm_car.commit(transactionId)) {
-        //             // recover rm_flight
-        //             return false;
-        //         }
-        //         if (!rm_room.commit(transactionId)) {
-        //             // recover rm_flight
-        //             // recover rm_car
-        //             return false;
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return false;
-        //     }
-        //     if (mw_locks.UnlockAll(transactionId)) {
-        //         // while (active_txn.contains(transactionId)) {
-        //         active_txn.remove(transactionId);
-        //         // }
-        //         return true;
-        //     }
-        //     else {
-        //         return false;
-        //     }
-        // }
          return txn_manager.commit(transactionId);
     }
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        // if (transactionId < 1 || !this.active_txn.contains(transactionId)) {
-        //     Trace.warn("RM::Commit failed--Invalid transactionId");
-        //     throw new InvalidTransactionException(transactionId);
-        // }
-        // else {
-        //     mw_locks.UnlockAll(transactionId);
-        //     while (active_txn.contains(transactionId)) {
-        //             active_txn.remove(transactionId);
-        //     }
-        // }
+        Stack history = txn_manager.getHistory(transactionId);
+        while (!history.empty())
+        {
+            Vector v = history.pop();
+            if (v.get(0).equals("newcar"))
+            {
+                rm_car.removeCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
+            }
+            else if (v.get(0).equals("deletecar"))
+            {
+                rm_car.recoverCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
+            }
+            else if (v.get(0).equals("reservecar"))
+            {
+                rm_car.freeItemRes(transactionId, gi(v.get(1)), gs(v.get(2)), 1);
+                Customer cust = (Customer) readData( id, Customer.getKey(gi(v.get(1))));
+                cust.cancel(gs(v.get(2)), gs(v.get(3)));
+                writeData(transactionId, cust.getKey(), cust);
+            }
+        }
         txn_manager.abort(transactionId);
     }
 

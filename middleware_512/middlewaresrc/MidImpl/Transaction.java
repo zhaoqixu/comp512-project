@@ -17,9 +17,20 @@ public class Transaction
 {
     protected int xid;
     public int op_count;
+    protected Stack<Vector> txn_hist = new Stack<Vector>();
 
     public Transaction(int transactionId)
     {
         this.xid = transactionId;
+    }
+
+    public void addHistory(Object... args)
+    {
+        Vector v = new Vector();
+        for (Object arg : args)
+        {
+            v.addElement(arg);
+        }
+        this.txn_hist.push(v);
     }
 }

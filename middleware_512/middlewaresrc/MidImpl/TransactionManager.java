@@ -55,10 +55,14 @@ public class TransactionManager
         else
         {
             Trace.info("RM::Aborting transaction : " + transactionId);
-            //TODO recovery
             mw_locks.UnlockAll(transactionId);
             active_txn.remove(transactionId);
         }
+    }
+
+    public Stack getHistory(int transactionId)
+    {
+        return this.active_txn.get(transactionId).txn_hist;
     }
 
     public boolean shutdown() throws RemoteException

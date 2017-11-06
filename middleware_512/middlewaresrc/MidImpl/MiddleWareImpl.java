@@ -279,6 +279,10 @@ public class MiddleWareImpl implements MiddleWare
     public int queryFlight(int id, int flightNum)
         throws RemoteException
     {
+        if (id == 0)
+        {
+            return rm_flight.queryFlight(id, flightNum);
+        }
         String s = "flight-" + flightNum;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -307,6 +311,10 @@ public class MiddleWareImpl implements MiddleWare
     public int queryFlightPrice(int id, int flightNum )
         throws RemoteException
     {
+        if (id == 0)
+        {
+            return rm_flight.queryFlightPrice(id, flightNum);
+        }
         String s = "flight-" + flightNum;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -322,6 +330,10 @@ public class MiddleWareImpl implements MiddleWare
     public int queryRooms(int id, String location)
         throws RemoteException
     {
+        if (id == 0)
+        {
+            return rm_room.queryRooms(id, location);
+        }
         String s = "room-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -338,6 +350,10 @@ public class MiddleWareImpl implements MiddleWare
     public int queryRoomsPrice(int id, String location)
         throws RemoteException
     {
+        if (id == 0)
+        {
+            return rm_room.queryRoomsPrice(id, location);
+        }
         String s = "room-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -353,6 +369,9 @@ public class MiddleWareImpl implements MiddleWare
     public int queryCars(int id, String location)
         throws RemoteException
     {
+        if (id == 0) {
+            return rm_car.queryCars(id, location);
+        }
         String s = "car-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -368,6 +387,10 @@ public class MiddleWareImpl implements MiddleWare
     public int queryCarsPrice(int id, String location)
         throws RemoteException
     {
+        if (id == 0)
+        {
+            return rm_car.queryCarsPrice(id, location);
+        }
         String s = "car-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
@@ -391,6 +414,20 @@ public class MiddleWareImpl implements MiddleWare
     public String queryCustomerInfo(int id, int customerID)
         throws RemoteException
     {
+        if (id == 0)
+        {
+            Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+            Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+            if ( cust == null ) {
+                Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
+            } else {
+                    String s = cust.printBill();
+                    Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                    System.out.println( s );
+                    return s;
+            }
+        }
         Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
         String key = Customer.getKey(customerID);
         if (!txn_manager.requestLock(id, key, READ))

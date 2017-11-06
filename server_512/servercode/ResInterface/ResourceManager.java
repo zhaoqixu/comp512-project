@@ -145,27 +145,27 @@ public interface ResourceManager extends Remote
     public boolean shutdown() throws RemoteException;
 
     /* Remove provided number of flights*/
-    public boolean removeFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    public boolean removeFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
     throws RemoteException;
 
     /* Remove provided number of rooms*/
-    public boolean removeRooms(int id, String location, int count, int old_price)
+    public boolean removeRooms(int id, String slocation, String scount, String sold_price)
     throws RemoteException;
 
     /* Remove provided number of cars*/
-    public boolean removeCars(int id, String location, int count, int old_price)
+    public boolean removeCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException;
 
     /* Recover provided number of flights*/
-    public boolean recoverFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    public boolean recoverFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
     throws RemoteException;
 
     /* Recover provided number of rooms*/
-    public boolean recoverRooms(int id, String location, int count, int old_price)
+    public boolean recoverRooms(int id, String slocation, String scount, String sold_price)
     throws RemoteException;
 
     /* Recover provided number of cars*/
-    public boolean recoverCars(int id, String location, int count, int old_price)
+    public boolean recoverCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException;
 
 }

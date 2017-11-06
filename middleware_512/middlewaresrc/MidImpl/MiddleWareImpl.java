@@ -481,11 +481,12 @@ public class MiddleWareImpl implements MiddleWare
             ReservedItem[] reserveditem = new ReservedItem[reservationHT.size()];
             int[] reservedCount = new int[reservationHT.size()];
             String res_history = "";
+            String command = "deletecustomer";
+            txn_manager.active_txn.get(id).addHistory(command, Customer.getKey(customerID), res_history);
             for (Enumeration e = reservationHT.keys(); e.hasMoreElements();i++) {        
                 reservedkey[i] = (String) (e.nextElement());
                 reserveditem[i] = cust.getReservedItem(reservedkey[i]);
                 reservedCount[i] = reserveditem[i].getCount();
-                res_history += reservedkey[i] + "," + Integer.toString(reservedCount[i]) + ";";
                 if (!txn_manager.requestLock(id, reservedkey[i], WRITE))
                 {
                     Trace.warn("RM::Lock failed--Can not acquire lock");
@@ -507,12 +508,12 @@ public class MiddleWareImpl implements MiddleWare
                     default:
                         break;
                 }
+                String sub_hist = reservedkey[i] + "," + Integer.toString(reservedCount[i]) + ";";
+                txn_manager.active_txn.get(id).addSubHistory(sub_hist,2);
             }
             // remove the customer from the storage
             removeData(id, cust.getKey());
             Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
-            String command = "deletecustomer";
-            txn_manager.active_txn.get(id).addHistory(command, Customer.getKey(customerID), res_history);
             return true;
         } // if
     }
@@ -662,43 +663,46 @@ public class MiddleWareImpl implements MiddleWare
             return false;
         }
         String res_history = "";
-        Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
-        int[] flights = new int[flightNumbers.size()];
-        for (int i = 0; i < flightNumbers.size(); i++) {
-            try {
-                flights[i] = gi(flightNumbers.elementAt(i));
-            }
-            catch (Exception e){}
-        }
-        for (int i = 0; i < flightNumbers.size(); i++) {
-            if (f_cnt.containsKey(flights[i]))
-                f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
-            else
-                f_cnt.put(flights[i], 1);
-        }
+        String cust_history = "";
+        String command = "itinerary";
+        txn_manager.active_txn.get(id).addHistory(command, Integer.toString(customer), res_history, cust_history);
+        // Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
+        // int[] flights = new int[flightNumbers.size()];
+        // for (int i = 0; i < flightNumbers.size(); i++) {
+        //     try {
+        //         flights[i] = gi(flightNumbers.elementAt(i));
+        //     }
+        //     catch (Exception e){}
+        // }
+        // for (int i = 0; i < flightNumbers.size(); i++) {
+        //     if (f_cnt.containsKey(flights[i]))
+        //         f_cnt.put(flights[i], f_cnt.get(flights[i])+1);
+        //     else
+        //         f_cnt.put(flights[i], 1);
+        // }
 
-        if (car) {
-            res_history += "car-" + location + ",1;";
+        // if (car) {
+            // res_history += "car-" + location + ",1;";
             // // check if the item is available
             // int item = rm_car.queryCars(id, location);
             // if ( item == 0 )
             //     return false;
-        }
+        // }
 
-        if (room) {
-            res_history += "room-" + location + ",1;";
+        // if (room) {
+            // res_history += "room-" + location + ",1;";
             // // check if the item is available
             // int item = rm_room.queryRooms(id, location);
             // if ( item == 0 )
             //     return false;
-        }
-        Set<Integer> keys = f_cnt.keySet();
-        for (int key : keys) {
-            res_history += "flight-" + key + "," + f_cnt.get(key) + ";";
+        // }
+        // Set<Integer> keys = f_cnt.keySet();
+        // for (int key : keys) {
+            // res_history += "flight-" + key + "," + f_cnt.get(key) + ";";
             // int item = rm_flight.queryFlight(id, key);
             // if (item < f_cnt.get(key))
             //     return false;
-        }
+        // }
         String car_key = ("car-" + location).toLowerCase();
         if (!txn_manager.requestLock(id, car_key, WRITE))
         {
@@ -727,21 +731,26 @@ public class MiddleWareImpl implements MiddleWare
         }
         if (car) {
             car_reserved = rm_car.reserveCar(id, customer, location);
+            txn_manager.active_txn.get(id).addSubHistory(car_key+",1;",2);
             if (!car_reserved) {
+                txn_manager.active_txn.get(id).pop();
                 return false;
             }
         }
         if (room) {
             room_reserved = rm_room.reserveRoom(id, customer, location);
+            txn_manager.active_txn.get(id).addSubHistory(room_key+",1;",2);
             if (!room_reserved) {
                 if (car_reserved) {
                     rm_car.freeItemRes(id, customer, car_key, 1);
                 }
+                txn_manager.active_txn.get(id).pop();
                 return false;
             }
         }
         for (int i = 0; i < flightNumbers.size(); i++ ) {
             flight_reserved[i] = rm_flight.reserveFlight(id, customer, Integer.parseInt((String)flightNumbers.elementAt(i)));
+            txn_manager.active_txn.get(id).addSubHistory(flight_key[i]+",1;",2);
             if (!flight_reserved[i]) {
                 if (car_reserved) {
                     rm_car.freeItemRes(id, customer, car_key, 1);
@@ -752,24 +761,26 @@ public class MiddleWareImpl implements MiddleWare
                 for (int j = 0; j < i; j++ ) {
                     rm_flight.freeItemRes(id, customer, flight_key[j], 1);
                 }
+                txn_manager.active_txn.get(id).pop();
                 return false;
             }
         }
         if (car_reserved) {
-            cust.reserve( car_key, location, rm_car.queryCarsPrice(id, location));      
+            cust.reserve( car_key, location, rm_car.queryCarsPrice(id, location));
+            txn_manager.active_txn.get(id).addSubHistory(car_key+",1;",3);
             writeData( id, cust.getKey(), cust );
         }
         if (room_reserved) {
-            cust.reserve( room_key, location, rm_room.queryRoomsPrice(id, location));      
+            cust.reserve( room_key, location, rm_room.queryRoomsPrice(id, location));
+            txn_manager.active_txn.get(id).addSubHistory(room_key+",1;",3);
             writeData( id, cust.getKey(), cust );
         }
         for (int i = 0; i < flightNumbers.size(); i++ ) {
             int flightNum = Integer.parseInt((String)flightNumbers.elementAt(i));
-            cust.reserve( flight_key[i], String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));      
+            cust.reserve( flight_key[i], String.valueOf(flightNum), rm_flight.queryFlightPrice(id, flightNum));
+            txn_manager.active_txn.get(id).addSubHistory(flight_key[i]+",1;",3);
             writeData( id, cust.getKey(), cust );
         }
-        String command = "itinerary";
-        txn_manager.active_txn.get(id).addHistory(command, Integer.toString(customer), res_history);
         return true;
     }
     // Convert Object to int
@@ -909,6 +920,7 @@ public class MiddleWareImpl implements MiddleWare
                 int customerID = Integer.parseInt(v.get(1));
                 Customer cust = (Customer) readData( transactionId, Customer.getKey(customerID));
                 String res_history = v.get(2);
+                String cust_history = v.get(3);
                 String[] reserved = res_history.split(";");
                 for (int i = 0; i < reserved.length; i++)
                 {
@@ -918,19 +930,24 @@ public class MiddleWareImpl implements MiddleWare
                     switch (tokens[0].charAt(0)) {
                         case 'c':
                             rm_car.freeItemRes(transactionId, customerID, tokens[0], count);
-                            cust.cancel(tokens[0], keys[1], count);
                             break;
                         case 'f':
                             rm_flight.freeItemRes(transactionId, customerID, tokens[0], count);
-                            cust.cancel(tokens[0], keys[1], count);
                             break;
                         case 'r':
                             rm_room.freeItemRes(transactionId, customerID, tokens[0], count);
-                            cust.cancel(tokens[0], keys[1], count);
                             break;
                         default:
                             break;
                     }
+                }
+                String[] cust_reserved = cust_history.split(";");
+                for (int i = 0; i < cust_reserved.length; i++)
+                {
+                    String[] tokens = cust_reserved[i].split(",");
+                    int count = Integer.parseInt(tokens[1]);
+                    String[] keys = tokens[0].split("-");
+                    cust.cancel(tokens[0], keys[1], count);
                 }
                 writeData(transactionId, cust.getKey(), cust);
             }

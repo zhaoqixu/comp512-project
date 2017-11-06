@@ -33,4 +33,18 @@ public class Transaction
         }
         this.txn_hist.push(v);
     }
+
+    public void addSubHistory(String arg, int index)
+    {
+        Vector<String> v = this.txn_hist.pop();
+        String s = v.get(index);
+        s += arg;
+        v.set(index, s);
+        this.txn_hist.push(v);
+    }
+
+    public Vector<String> pop()
+    {
+        return this.txn_hist.pop();
+    }
 }

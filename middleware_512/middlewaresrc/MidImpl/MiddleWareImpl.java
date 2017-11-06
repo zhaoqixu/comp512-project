@@ -212,7 +212,7 @@ public class MiddleWareImpl implements MiddleWare
         if (rm_car.addCars(id, location, count, price))
         {
             String command = "newcar";
-            txn_manager.active_txn.get(id).addHistory(command, location, count, old_price);
+            txn_manager.active_txn.get(id).addHistory(command, location, Integer.toString(count), Integer.toString(old_price));
             return true;
         }
         else return false;
@@ -236,7 +236,7 @@ public class MiddleWareImpl implements MiddleWare
         if (rm_car.deleteCars(id, location))
         {
             String command = "deletecar";
-            txn_manager.active_txn.get(id).addHistory(command, location, old_count, old_price);
+            txn_manager.active_txn.get(id).addHistory(command, location, Integer.toString(old_count), Integer.toString(old_price));
             return true;
         }
         else return false;
@@ -526,7 +526,7 @@ public class MiddleWareImpl implements MiddleWare
                 cust.reserve( key, location, rm_car.queryCarsPrice(id, location));      
                 writeData( id, cust.getKey(), cust );
                 String command = "reservecar";
-                txn_manager.active_txn.get(id).addHistory(command, customerID, key, location);
+                txn_manager.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, location);
                 return true;
             } else {
                 Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );

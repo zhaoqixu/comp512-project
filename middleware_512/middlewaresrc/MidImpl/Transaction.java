@@ -17,17 +17,17 @@ public class Transaction
 {
     protected int xid;
     public int op_count;
-    protected Stack<Vector> txn_hist = new Stack<Vector>();
+    protected Stack<Vector<String>> txn_hist = new Stack<Vector<String>>();
 
     public Transaction(int transactionId)
     {
         this.xid = transactionId;
     }
 
-    public void addHistory(Object... args)
+    public void addHistory(String... args)
     {
-        Vector v = new Vector();
-        for (Object arg : args)
+        Vector<String> v = new Vector();
+        for (String arg : args)
         {
             v.addElement(arg);
         }

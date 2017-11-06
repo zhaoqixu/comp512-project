@@ -775,26 +775,29 @@ public class MiddleWareImpl implements MiddleWare
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        Stack history = txn_manager.getHistory(transactionId);
-        while (!history.empty())
-        {
-            Vector v = history.pop();
-            if (v.get(0).equals("newcar"))
+        Stack<Vector> history = txn_manager.getHistory(transactionId);
+        try {
+            while (!history.empty())
             {
-                rm_car.removeCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
-            }
-            else if (v.get(0).equals("deletecar"))
-            {
-                rm_car.recoverCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
-            }
-            else if (v.get(0).equals("reservecar"))
-            {
-                rm_car.freeItemRes(transactionId, gi(v.get(1)), gs(v.get(2)), 1);
-                Customer cust = (Customer) readData( id, Customer.getKey(gi(v.get(1))));
-                cust.cancel(gs(v.get(2)), gs(v.get(3)));
-                writeData(transactionId, cust.getKey(), cust);
+                Vector v = history.pop();
+                if (v.get(0).equals("newcar"))
+                {
+                    rm_car.removeCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
+                }
+                else if (v.get(0).equals("deletecar"))
+                {
+                    rm_car.recoverCars(transactionId, gs(v.get(1)), gi(v.get(2)), gi(v.get(3)));
+                }
+                else if (v.get(0).equals("reservecar"))
+                {
+                    rm_car.freeItemRes(transactionId, gi(v.get(1)), gs(v.get(2)), 1);
+                    Customer cust = (Customer) readData( transactionId, Customer.getKey(gi(v.get(1))));
+                    cust.cancel(gs(v.get(2)), gs(v.get(3)));
+                    writeData(transactionId, cust.getKey(), cust);
+                }
             }
         }
+        catch (Exception e) {}
         txn_manager.abort(transactionId);
     }
 

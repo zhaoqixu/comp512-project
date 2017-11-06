@@ -543,9 +543,12 @@ public class ResourceManagerImpl implements ResourceManager
         return true;
     }
 
-    public boolean removeFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    public boolean removeFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
     throws RemoteException
     {
+        int flightNum = Integer.parseInt(sflightNum);
+        int flightSeats = Integer.parseInt(sflightSeats);
+        int old_flightPrice = Integer.parseInt(sold_flightPrice);
         Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") called" );
         Flight curObj = (Flight) readData( id, Flight.getKey(flightNum));
         // Check if there is such an item in the storage
@@ -572,9 +575,12 @@ public class ResourceManagerImpl implements ResourceManager
         } // if
     }
 
-    public boolean removeRooms(int id, String location, int count, int old_price)
+    public boolean removeRooms(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        String location = slocation;
+        int count = Integer.parseInt(scount);
+        int old_price = Integer.parseInt(sold_price);
         Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") called" );
         Hotel curObj = (Hotel) readData( id, Hotel.getKey(location));
         // Check if there is such an item in the storage
@@ -601,9 +607,12 @@ public class ResourceManagerImpl implements ResourceManager
         } // if
     }
 
-    public boolean removeCars(int id, String location, int count, int old_price)
+    public boolean removeCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        String location = slocation;
+        int count = Integer.parseInt(scount);
+        int old_price = Integer.parseInt(sold_price);
         Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") called" );
         Car curObj = (Car) readData( id, Car.getKey(location));
         // Check if there is such an item in the storage
@@ -630,21 +639,30 @@ public class ResourceManagerImpl implements ResourceManager
         } // if
     }
 
-    public boolean recoverFlight(int id, int flightNum, int flightSeats, int old_flightPrice)
+    public boolean recoverFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
     throws RemoteException
     {
+        int flightNum = Integer.parseInt(sflightNum);
+        int flightSeats = Integer.parseInt(sflightSeats);
+        int old_flightPrice = Integer.parseInt(sold_flightPrice);
         return addFlight(id, flightNum, flightSeats, old_flightPrice);
     }
 
-    public boolean recoverRooms(int id, String location, int count, int old_price)
+    public boolean recoverRooms(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        String location = slocation;
+        int count = Integer.parseInt(scount);
+        int old_price = Integer.parseInt(sold_price);
         return addRooms(id, location, count, old_price);
     }
 
-    public boolean recoverCars(int id, String location, int count, int old_price)
+    public boolean recoverCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        String location = slocation;
+        int count = Integer.parseInt(scount);
+        int old_price = Integer.parseInt(sold_price);
         return addCars(id, location, count, old_price);
     }
 }

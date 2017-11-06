@@ -473,11 +473,23 @@ public class ResourceManagerImpl implements ResourceManager
     public void freeItemRes(int id, int customerID,String reservedkey, int reservedCount)
         throws RemoteException
     {
-        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
+        Trace.info("RM::freeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
         ReservableItem item  = (ReservableItem) readData(id, reservedkey);
-        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") has reserved " + reservedkey + "which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
         item.setReserved(item.getReserved()-reservedCount);
         item.setCount(item.getCount()+reservedCount);
+        // writeData(id, reservedkey, item);
+        Trace.info("RM::freeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+    }
+
+    public void undoFreeItemRes(int id, int customerID,String reservedkey, int reservedCount)
+        throws RemoteException
+    {
+        Trace.info("RM::undoFreeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
+        ReservableItem item  = (ReservableItem) readData(id, reservedkey);
+        item.setReserved(item.getReserved()+reservedCount);
+        item.setCount(item.getCount()-reservedCount);
+        // writeData(id, reservedkey, item);
+        Trace.info("RM::undoFreeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
     }
 
 
@@ -560,11 +572,6 @@ public class ResourceManagerImpl implements ResourceManager
                 Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") failed-- insufficient count" );
                 return false;
             }
-            else if (curObj.getCount() == flightSeats) {
-                removeData(id, curObj.getKey());
-                Trace.info("RM::removeFlight(" + id + ", " + flightNum + ", " + flightSeats + ", " + old_flightPrice + ") item deleted" );
-                return true;
-            }
             else {
                 curObj.setCount(curObj.getCount() - flightSeats);
                 curObj.setPrice(old_flightPrice);
@@ -592,11 +599,6 @@ public class ResourceManagerImpl implements ResourceManager
                 Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") failed-- insufficient count" );
                 return false;
             }
-            else if (curObj.getCount() == count) {
-                removeData(id, curObj.getKey());
-                Trace.info("RM::removeRooms(" + id + ", " + location + ", " + count + ", " + old_price + ") item deleted" );
-                return true;
-            }
             else {
                 curObj.setCount(curObj.getCount() - count);
                 curObj.setPrice(old_price);
@@ -623,11 +625,6 @@ public class ResourceManagerImpl implements ResourceManager
             if (curObj.getCount() < count) {
                 Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") failed-- insufficient count" );
                 return false;
-            }
-            else if (curObj.getCount() == count) {
-                removeData(id, curObj.getKey());
-                Trace.info("RM::removeCars(" + id + ", " + location + ", " + count + ", " + old_price + ") item deleted" );
-                return true;
             }
             else {
                 curObj.setCount(curObj.getCount() - count);

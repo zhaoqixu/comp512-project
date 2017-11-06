@@ -34,14 +34,28 @@ public class Customer extends RMItem
 			m_Reservations.put( reservedItem.getKey(), reservedItem );
 		}
 
-		public void cancel( String key, String location)
+		public void reserve( String key, String location, int price , int count)
+		{
+			ReservedItem reservedItem = getReservedItem( key );
+			if( reservedItem == null ) {
+				// customer doesn't already have a reservation for this resource, so create a new one now
+				reservedItem = new ReservedItem( key, location, count, price );
+			} else {
+				reservedItem.setCount( reservedItem.getCount() + count );
+				// NOTE: latest price overrides existing price
+				reservedItem.setPrice( price );
+			} // else
+			m_Reservations.put( reservedItem.getKey(), reservedItem );
+		}
+
+		public void cancel( String key, String location, int count)
 		{
 			ReservedItem reservedItem = getReservedItem( key );
 			if( reservedItem == null ) {
 				// customer doesn't already have a reservation for this resource, so create a new one now
 				// reservedItem = new ReservedItem( key, location, 1, price );
 			} else {
-				reservedItem.setCount( reservedItem.getCount() - 1 );
+				reservedItem.setCount( reservedItem.getCount() - count );
 				// NOTE: latest price overrides existing price
 				// reservedItem.setPrice( price );
 			} // else

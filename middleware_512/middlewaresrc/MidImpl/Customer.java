@@ -58,8 +58,12 @@ public class Customer extends RMItem
 				reservedItem.setCount( reservedItem.getCount() - count );
 				// NOTE: latest price overrides existing price
 				// reservedItem.setPrice( price );
-			} // else
-			m_Reservations.put( reservedItem.getKey(), reservedItem );
+				// else\
+				if( reservedItem.getCount() == 0)
+					m_Reservations.remove(reservedItem.getKey());
+				else
+					m_Reservations.put( reservedItem.getKey(), reservedItem );
+			}
 		}
 
 		public ReservedItem getReservedItem( String key )

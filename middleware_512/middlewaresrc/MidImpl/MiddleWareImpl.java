@@ -518,7 +518,7 @@ public class MiddleWareImpl implements MiddleWare
             int[] reservedCount = new int[reservationHT.size()];
             String res_history = "";
             String command = "deletecustomer";
-            txn_manager.active_txn.get(id).addHistory(command, Customer.getKey(customerID), res_history);
+            txn_manager.active_txn.get(id).addHistory(command, Integer.toString(customerID), res_history);
             for (Enumeration e = reservationHT.keys(); e.hasMoreElements();i++) {        
                 reservedkey[i] = (String) (e.nextElement());
                 reserveditem[i] = cust.getReservedItem(reservedkey[i]);

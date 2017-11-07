@@ -166,7 +166,6 @@ public class MiddleWareImpl implements MiddleWare
     }
 
 
-
     // Create a new room location or add rooms to an existing location
     //  NOTE: if price <= 0 and the room location already exists, it maintains its current price
     public boolean addRooms(int id, String location, int count, int price)

@@ -13,27 +13,15 @@ public class client_test
 {
     static String message = "blank";
     static MiddleWare mw = null;
+    HashSet<Integer> txn_ids = new HashSet<Integer>();
 
     public static void main(String args[])
     {
         client_test obj = new client_test();
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        String command = "";
-        Vector arguments  = new Vector();
-        int Id, Cid;
-        int flightNum;
-        int flightPrice;
-        int flightSeats;
-        boolean Room;
-        boolean Car;
-        int price;
-        int numRooms;
-        int numCars;
-        String location;
-
 
         String server = "localhost";
         int port = 1099;
+        int client_name = -1;
         if (args.length > 0)
         {
             server = args[0];
@@ -44,7 +32,16 @@ public class client_test
         }
         if (args.length > 2)
         {
-            System.out.println ("Usage: java client [rmihost [rmiport]]");
+            client_name = Integer.parseInt(args[2]);
+            if (client_name > 10 || client_name < 1)
+            {
+                System.out.println ("Usage: java client_test [rmihost [rmiport]] [client version]");
+                System.exit(1);
+            }
+        }
+        if (args.length > 3)
+        {
+            System.out.println ("Usage: java client_test [rmihost [rmiport]] [client version]");
             System.exit(1);
         }
         
@@ -67,7 +64,7 @@ public class client_test
         } 
         catch (Exception e) 
         {    
-            System.err.println("Client exception: " + e.toString());
+            System.err.println("Client_test exception: " + e.toString());
             e.printStackTrace();
         }
         
@@ -79,104 +76,143 @@ public class client_test
 
         System.out.println("\n\n\tClient Interface");
         System.out.println("Type \"help\" for list of supported commands");
-        obj.runCmd(obj, "newcar,1,A,1,1");
-        obj.runCmd(obj, "newcar,1,B,2,2");
-        obj.runCmd(obj, "newcar,1,C,3,3");
-        obj.runCmd(obj, "newcar,1,D,4,4");
-
-        obj.runCmd(obj, "newroom,1,A,1,1");
-        obj.runCmd(obj, "newroom,1,B,2,2");
-        obj.runCmd(obj, "newroom,1,C,3,3");
-        obj.runCmd(obj, "newroom,1,D,4,4");
-                
-        obj.runCmd(obj, "newflight,1,1,1,1");
-        obj.runCmd(obj, "newflight,1,2,2,2");
-        obj.runCmd(obj, "newflight,1,3,3,3");
-        obj.runCmd(obj, "newflight,1,4,4,4");
-
-        obj.runCmd(obj, "newcustomerid,1,111");
-        obj.runCmd(obj, "newcustomerid,1,222");
-
-        obj.runCmd(obj, "deletecar,1,A");
-        obj.runCmd(obj, "deletecar,1,E");
-
-        obj.runCmd(obj, "deleteroom,1,A");
-        obj.runCmd(obj, "deleteroom,1,E");
-
-        obj.runCmd(obj, "deleteflight,1,1");
-        obj.runCmd(obj, "deleteflight,1,5");
-
-        obj.runCmd(obj, "reserveflight,1,111,1");
-        obj.runCmd(obj, "reserveflight,1,111,2");
-        obj.runCmd(obj, "reserveflight,1,111,5");
-
-        obj.runCmd(obj, "reservecar,1,111,A");
-        obj.runCmd(obj, "reservecar,1,111,B");
-        obj.runCmd(obj, "reservecar,1,111,E");
-
-        obj.runCmd(obj, "reserveroom,1,111,A");
-        obj.runCmd(obj, "reserveroom,1,111,B");
-        obj.runCmd(obj, "reserveroom,1,111,E");
-
-        obj.runCmd(obj, "deletecustomer,1,111");
-
-        obj.runCmd(obj, "itinerary,1,222,1,2,3,4,B,true,false");
-        obj.runCmd(obj, "itinerary,1,222,2,2,4,2,B,true,false");
-        obj.runCmd(obj, "itinerary,1,222,2,3,4,2,4,B,true,false");
+        if (client_name == 1) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "newcar,1,A,1,1");
+            obj.runCmd(obj, "newcar,1,B,2,2");
+            obj.runCmd(obj, "newcar,1,C,3,3");
+            obj.runCmd(obj, "newcar,1,D,4,4");
+            obj.runCmd(obj, "newroom,1,A,1,1");
+            obj.runCmd(obj, "newroom,1,B,2,2");
+            obj.runCmd(obj, "newroom,1,C,3,3");
+            obj.runCmd(obj, "newroom,1,D,4,4");
+            obj.runCmd(obj, "newflight,1,1,1,1");
+            obj.runCmd(obj, "newflight,1,2,2,2");
+            obj.runCmd(obj, "newflight,1,3,3,3");
+            obj.runCmd(obj, "newflight,1,4,4,4");
+            obj.runCmd(obj, "newcustomerid,1,111");
+            obj.runCmd(obj, "newcustomerid,1,222");
+            obj.runCmd(obj, "commit,1");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 2) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "newcar,2,A,1,1");
+            obj.runCmd(obj, "abort,2");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 3) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "newroom,3,A,1,1");
+            obj.runCmd(obj, "abort,3");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 4) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "newflight,4,1,1,1");
+            obj.runCmd(obj, "abort,4");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 5) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "deletecar,5,A");
+            obj.runCmd(obj, "abort,5");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 6) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "deleteroom,6,A");
+            obj.runCmd(obj, "abort,6");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 7) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "deleteflight,7,1");
+            obj.runCmd(obj, "abort,7");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 8) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "reservecar,8,111,A");
+            obj.runCmd(obj, "abort,8");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 9) {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "reserveroom,9,111,A");
+            obj.runCmd(obj, "abort,9");
+            obj.runCmd(obj, "quit");
+        }
+        else if (client_name == 10)
+        {
+            obj.runCmd(obj, "start");
+            obj.runCmd(obj, "reserveflight,10,111,1");
+            obj.runCmd(obj, "abort,10");
+            obj.runCmd(obj, "quit");
+        }
+        else
+        {
+            obj.runCmd(obj, "shutdown");
+        }
+        // obj.runCmd(obj, "newcar,1,A,1,1");
+        // obj.runCmd(obj, "newcar,1,B,2,2");
+        // obj.runCmd(obj, "newcar,1,C,3,3");
+        // obj.runCmd(obj, "newcar,1,D,4,4");
         
-        obj.runCmd(obj, "quit");
+        // obj.runCmd(obj, "quit");
     }
 
     public void megaQuery(client_test obj)
     {
         System.out.println();
-            try{
-                System.out.println();
-                for (int i = 1; i<=4; i++) {
-                    int seats=obj.mw.queryFlight(1,i);
-                    int price=obj.mw.queryFlightPrice(1,i);
-                    System.out.println("Flight No.: "+ i + " Seats : " + seats + " Price : " + price);
-                }
-                for (int i = 1; i<=4; i++) {
-                    String loc = "";
-                    if (i == 1)
-                        loc = "A";
-                    if (i == 2)
-                        loc = "B";
-                    if (i == 3)
-                        loc = "C";
-                    if (i == 4)
-                        loc = "D";
-                    int seats=obj.mw.queryCars(1,loc);
-                    int price=obj.mw.queryCarsPrice(1,loc);
-                    System.out.println("Car location: "+ loc + " No. : " + seats + " Price : " + price);
-                }
-                for (int i = 1; i<=4; i++) {
-                    String loc = "";
-                    if (i == 1)
-                        loc = "A";
-                    if (i == 2)
-                        loc = "B";
-                    if (i == 3)
-                        loc = "C";
-                    if (i == 4)
-                        loc = "D";
-                    int seats=obj.mw.queryRooms(1,loc);
-                    int price=obj.mw.queryRoomsPrice(1,loc);
-                    System.out.println("Room location: "+ loc + " No. : " + seats + " Price : " + price);
-                }
-                for (int i = 1; i<=2; i++) {
-                    int id = i + i*10 + i*100;
-                    String bill=obj.mw.queryCustomerInfo(1,id);
-                    System.out.println("Customer info:"+bill);
-                }
+        try{
+            System.out.println();
+            for (int i = 1; i<=4; i++) {
+                int seats=obj.mw.queryFlight(0,i);
+                int price=obj.mw.queryFlightPrice(0,i);
+                System.out.println("Flight No.: "+ i + " Seats : " + seats + " Price : " + price);
             }
-            catch(Exception e){
-            System.out.println("EXCEPTION:");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            for (int i = 1; i<=4; i++) {
+                String loc = "";
+                if (i == 1)
+                    loc = "A";
+                if (i == 2)
+                    loc = "B";
+                if (i == 3)
+                    loc = "C";
+                if (i == 4)
+                    loc = "D";
+                int seats=obj.mw.queryCars(0,loc);
+                int price=obj.mw.queryCarsPrice(0,loc);
+                System.out.println("Car location: "+ loc + " No. : " + seats + " Price : " + price);
             }
+            for (int i = 1; i<=4; i++) {
+                String loc = "";
+                if (i == 1)
+                    loc = "A";
+                if (i == 2)
+                    loc = "B";
+                if (i == 3)
+                    loc = "C";
+                if (i == 4)
+                    loc = "D";
+                int seats=obj.mw.queryRooms(0,loc);
+                int price=obj.mw.queryRoomsPrice(0,loc);
+                System.out.println("Room location: "+ loc + " No. : " + seats + " Price : " + price);
+            }
+            for (int i = 1; i<=2; i++) {
+                int id = i + i*10 + i*100;
+                String bill=obj.mw.queryCustomerInfo(0,id);
+                System.out.println("Customer info:"+bill);
+            }
+        }
+        catch(Exception e){
+        System.out.println("EXCEPTION:");
+        System.out.println(e.getMessage());
+        e.printStackTrace();
+        }
     }
+
     public void runCmd(client_test obj ,String command)
     {
         int Id, Cid;
@@ -190,6 +226,11 @@ public class client_test
         int numCars;
         String location;
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        HashSet<Integer> cmd_no_xid = new HashSet<Integer>();
+        cmd_no_xid.add(1);
+        cmd_no_xid.add(21);
+        cmd_no_xid.add(23);  
+        cmd_no_xid.add(26);  
         // int timeout = 10;
         System.out.print("\n>" + command);
         try{
@@ -199,6 +240,25 @@ public class client_test
         command=command.trim();
         Vector arguments  = new Vector();
         arguments=obj.parse(command);
+
+        try {
+            if (!cmd_no_xid.contains(obj.findChoice((String)arguments.elementAt(0))) && !obj.txn_ids.contains(obj.getInt(arguments.elementAt(1)))) {
+                System.out.println("Transaction ID provided is not valid");
+                System.out.println("Valid transaction IDs are: ");
+                Iterator<Integer> itr = obj.txn_ids.iterator();
+                while(itr.hasNext()){
+                    System.out.print(itr.next() + ", ");
+                }
+                System.out.println();
+                return;
+            }
+        }
+        catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
         switch(obj.findChoice((String)arguments.elementAt(0))){
         case 1: //help section
             if(arguments.size()==1)   //command was "help"
@@ -224,10 +284,17 @@ public class client_test
             flightNum = obj.getInt(arguments.elementAt(2));
             flightSeats = obj.getInt(arguments.elementAt(3));
             flightPrice = obj.getInt(arguments.elementAt(4));
-            if(mw.addFlight(Id,flightNum,flightSeats,flightPrice))
-                System.out.println("Flight added");
-            else
-                System.out.println("Flight could not be added");
+            try {
+                if(mw.addFlight(Id,flightNum,flightSeats,flightPrice))
+                    System.out.println("Flight added");
+                else
+                    System.out.println("Flight could not be added");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -250,10 +317,17 @@ public class client_test
             location = obj.getString(arguments.elementAt(2));
             numCars = obj.getInt(arguments.elementAt(3));
             price = obj.getInt(arguments.elementAt(4));
+            try {
             if(mw.addCars(Id,location,numCars,price))
                 System.out.println("Cars added");
             else
                 System.out.println("Cars could not be added");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -276,10 +350,17 @@ public class client_test
             location = obj.getString(arguments.elementAt(2));
             numRooms = obj.getInt(arguments.elementAt(3));
             price = obj.getInt(arguments.elementAt(4));
+            try {
             if(mw.addRooms(Id,location,numRooms,price))
                 System.out.println("Rooms added");
             else
                 System.out.println("Rooms could not be added");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -296,12 +377,17 @@ public class client_test
             System.out.println("Adding a new Customer using id:"+arguments.elementAt(1));
             try{
             Id = obj.getInt(arguments.elementAt(1));
+            try {
             int customer=mw.newCustomer(Id);
-            if (customer == -1) {
+            if (customer == -1)
                 System.out.println("Customer could not be added");
-            }
-            else {
+            else
                 System.out.println("new customer id:"+customer);
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
             }
             }
             catch(Exception e){
@@ -321,10 +407,17 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             flightNum = obj.getInt(arguments.elementAt(2));
+            try {
             if(mw.deleteFlight(Id,flightNum))
                 System.out.println("Flight Deleted");
             else
                 System.out.println("Flight could not be deleted");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -343,11 +436,17 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
-            
+            try {
             if(mw.deleteCars(Id,location))
                 System.out.println("Cars Deleted");
             else
                 System.out.println("Cars could not be deleted");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -366,10 +465,17 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
+            try {
             if(mw.deleteRooms(Id,location))
                 System.out.println("Rooms Deleted");
             else
                 System.out.println("Rooms could not be deleted");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -388,10 +494,17 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             int customer = obj.getInt(arguments.elementAt(2));
+            try {
             if(mw.deleteCustomer(Id,customer))
                 System.out.println("Customer Deleted");
             else
                 System.out.println("Customer could not be deleted");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -410,11 +523,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             flightNum = obj.getInt(arguments.elementAt(2));
+            try {
             int seats=mw.queryFlight(Id,flightNum);
             if (seats >= 0)
                 System.out.println("Number of seats available:"+seats);
             else
                 System.out.println("Error: Could not query");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -433,11 +553,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
+            try {
             numCars=mw.queryCars(Id,location);
             if (numCars >= 0)
                 System.out.println("number of Cars at this location:"+numCars);
             else
                 System.out.println("Error: Could not query");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -456,11 +583,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
+            try {
             numRooms=mw.queryRooms(Id,location);
             if (numRooms >= 0)
                 System.out.println("number of Rooms at this location:"+numRooms);
             else
                 System.out.println("Error: Could not query");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -479,8 +613,15 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             int customer = obj.getInt(arguments.elementAt(2));
+            try {
             String bill=mw.queryCustomerInfo(Id,customer);
             System.out.println("Customer info:"+bill);
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -499,11 +640,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             flightNum = obj.getInt(arguments.elementAt(2));
+            try {
             price=mw.queryFlightPrice(Id,flightNum);
             if (price >= 0)
                 System.out.println("Price of a seat:"+price);
             else
                 System.out.println("Error: Could not query price");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -522,11 +670,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
+            try {
             price=mw.queryCarsPrice(Id,location);
             if (price >=0)
                 System.out.println("Price of a car at this location:"+price);
             else
                 System.out.println("Error: Could not query price");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -545,11 +700,18 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             location = obj.getString(arguments.elementAt(2));
+            try {
             price=mw.queryRoomsPrice(Id,location);
             if (price >= 0)
                 System.out.println("Price of Rooms at this location:"+price);
             else
                 System.out.println("Error: Could not query price");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -570,10 +732,17 @@ public class client_test
             Id = obj.getInt(arguments.elementAt(1));
             int customer = obj.getInt(arguments.elementAt(2));
             flightNum = obj.getInt(arguments.elementAt(3));
+            try {
             if(mw.reserveFlight(Id,customer,flightNum))
                 System.out.println("Flight Reserved");
             else
                 System.out.println("Flight could not be reserved.");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -595,11 +764,17 @@ public class client_test
             Id = obj.getInt(arguments.elementAt(1));
             int customer = obj.getInt(arguments.elementAt(2));
             location = obj.getString(arguments.elementAt(3));
-            
+            try {
             if(mw.reserveCar(Id,customer,location))
                 System.out.println("Car Reserved");
             else
                 System.out.println("Car could not be reserved.");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -620,11 +795,17 @@ public class client_test
             Id = obj.getInt(arguments.elementAt(1));
             int customer = obj.getInt(arguments.elementAt(2));
             location = obj.getString(arguments.elementAt(3));
-            
+            try {
             if(mw.reserveRoom(Id,customer,location))
                 System.out.println("Room Reserved");
             else
                 System.out.println("Room could not be reserved.");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -654,11 +835,17 @@ public class client_test
             location = obj.getString(arguments.elementAt(arguments.size()-3));
             Car = obj.getBoolean(arguments.elementAt(arguments.size()-2));
             Room = obj.getBoolean(arguments.elementAt(arguments.size()-1));
-            
+            try {
             if(mw.itinerary(Id,customer,flightNumbers,location,Car,Room))
                 System.out.println("Itinerary Reserved");
             else
                 System.out.println("Itinerary could not be reserved.");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -685,8 +872,15 @@ public class client_test
             try{
             Id = obj.getInt(arguments.elementAt(1));
             Cid = obj.getInt(arguments.elementAt(2));
+            try {
             boolean customer=mw.newCustomer(Id,Cid);
             System.out.println("new customer id:"+Cid);
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -694,7 +888,7 @@ public class client_test
             e.printStackTrace();
             }
             break;
-
+        
         case 23:  // start
             if(arguments.size()!=1){
             obj.wrongNumber();
@@ -703,6 +897,7 @@ public class client_test
             System.out.println("Starting a transaction session...");
             try{
             int transactionId=mw.start();
+            obj.txn_ids.add(transactionId);
             System.out.println("Transaction ID granted :"+transactionId);
             }
             catch(Exception e){
@@ -719,12 +914,22 @@ public class client_test
             }
             System.out.println("Committing a transaction session...");
             try{
-            int transactionId=obj.getInt(arguments.elementAt(1));
-            boolean committed=mw.commit(transactionId);
-            if (committed)
-                System.out.println("Transaction ID :"+transactionId+" committed");
-            else
+            Id=obj.getInt(arguments.elementAt(1));
+            try {
+            boolean committed=mw.commit(Id);
+            if (committed) {
+                obj.txn_ids.remove(Id);
+                System.out.println("Transaction ID :"+Id+" committed");
+            }
+            else {
                 System.out.println("Commit failed");
+            }
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -740,12 +945,17 @@ public class client_test
             }
             System.out.println("Aborting a transaction session...");
             try{
-            int transactionId=obj.getInt(arguments.elementAt(1));
-            boolean aborted=mw.commit(transactionId);
-            if (aborted)
-                System.out.println("Transaction ID :"+transactionId+" aborted");
-            else
-                System.out.println("Abort failed");
+            Id=obj.getInt(arguments.elementAt(1));
+            try {
+            mw.abort(Id);
+            obj.txn_ids.remove(Id);
+            System.out.println("Transaction ID :"+Id+" aborted");
+            }
+            catch (NullPointerException npe) {
+                System.out.println("Can not find ID "+ Id + " on middleware.");
+                System.out.println("Updating active transaction IDs ...");
+                obj.txn_ids.remove(Id);
+            }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -753,7 +963,7 @@ public class client_test
             e.printStackTrace();
             }
             break;
-            
+
         case 26:  //shutdown
             if(arguments.size()!=1){
             obj.wrongNumber();
@@ -761,13 +971,19 @@ public class client_test
             }
             try {
             System.out.println("Shutdown middleware...");
-            if (mw.shutdown()) {
+            // try {
+            if(mw.shutdown()) {
+                System.out.println("Shutdown succeed...");
                 System.out.println("Quitting client...");
                 System.exit(1);
             }
-            else {
+            else{
                 System.out.println("Shutdown failed...");
             }
+            // }
+            // catch(RemoteException re) {
+                
+            // }
             }
             catch(Exception e){
             System.out.println("EXCEPTION:");
@@ -775,6 +991,7 @@ public class client_test
             e.printStackTrace();
             }
             break;
+
         default:
             System.out.println("The interface does not support this command.");
             break;

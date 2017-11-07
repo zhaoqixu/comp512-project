@@ -168,4 +168,7 @@ public interface ResourceManager extends Remote
     public boolean recoverCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException;
 
+    /* Undo a freeItemRes */
+    public void undoFreeItemRes(int id, int customer, String reservedkey, int reservedCount)
+    throws RemoteException;
 }

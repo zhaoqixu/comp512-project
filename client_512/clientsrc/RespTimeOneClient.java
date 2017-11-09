@@ -18,19 +18,7 @@ public class RespTimeOneClient
     public static void main(String args[])
     {
         RespTimeOneClient obj = new RespTimeOneClient();
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        String command = "";
-        Vector arguments  = new Vector();
-        int Id, Cid;
-        int flightNum;
-        int flightPrice;
-        int flightSeats;
-        boolean Room;
-        boolean Car;
-        int price;
-        int numRooms;
-        int numCars;
-        String location;
+
         int type = 1; // 1: one RM, 2: multiple RMs
 
         String server = "localhost";
@@ -81,14 +69,14 @@ public class RespTimeOneClient
         warmUp(type, iterations_warmup);
         long before = System.currentTimeMillis();
         for(int i=0; i<iterations; i++){
-            // long start = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
             if (type == 1) {
                 oneRM();
             } else {
                 multiRM();
             }
-            // long end = System.currentTimeMillis();
-            // System.out.println(end-start);
+            long end = System.currentTimeMillis();
+            System.out.println(end-start);
         }
         long after = System.currentTimeMillis();
         System.out.println(after-before);

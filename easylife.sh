@@ -21,12 +21,14 @@ then
 elif [ $1 = 'm' ] 
 then
 	cd middleware_512/middlewaresrc
+	killall -9 rmiregistry
 	rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false 1088 &
 	javac MidImpl/MiddleWareImpl.java
 	java -Djava.security.policy=java.policy $MW_PATH  MidImpl.MiddleWareImpl $2 $3 $4
 elif [ $1 = 's' ]
 then
 	cd server_512/servercode
+	killall -9 rmiregistry
 	rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false 2199 &
 	javac ResImpl/ResourceManagerImpl.java
 	java -Djava.security.policy=java.policy $RM_PATH  ResImpl.ResourceManagerImpl 2199 $2

@@ -13,6 +13,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
+
 public class TransactionManager
 {
     public static final int READ = 0;
@@ -23,70 +24,78 @@ public class TransactionManager
 
     public int start() throws RemoteException {
         this.txn_counter ++;
-        Transaction txn = new Transaction(txn_counter);
-        TimeThread tt = new TimeThread(this, txn_counter);
-        tt.start();
-        this.active_txn.put(txn_counter, txn);
-        return txn_counter;
+        int id = this.txn_counter;
+        synchronized(this.active_txn) {
+            // while (this.active_txn.containsKey(id) || id == 1) {
+            //     id = new Random().nextInt(100000) + 1; //+1 because can return 0
+            // }
+            Transaction txn = new Transaction(id);
+            TimeThread tt = new TimeThread(this, id);
+            tt.start();
+            this.active_txn.put(id, txn);
+        }
+        return id;
     }
 
     public boolean commit(int transactionId) 
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-            Trace.warn("RM::Commit failed--Invalid transactionId");
-            throw new InvalidTransactionException(transactionId);
-        }
-        else
-        {
-            Trace.info("RM::Committing transaction : " + transactionId);
-            mw_locks.UnlockAll(transactionId);     
-            active_txn.remove(transactionId);
+        synchronized(this.active_txn) {
+            if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                Trace.warn("RM::Commit failed--Invalid transactionId");
+                throw new InvalidTransactionException(transactionId);
+            }
+            else
+            {
+                Trace.info("RM::Committing transaction : " + transactionId);
+                mw_locks.UnlockAll(transactionId);     
+                this.active_txn.remove(transactionId);
+            }
         }
         return true;
     }
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-            Trace.warn("RM::Abort failed--Invalid transactionId");
-            throw new InvalidTransactionException(transactionId);
-        }
-        else
-        {
-            Trace.info("RM::Aborting transaction : " + transactionId);
-            mw_locks.UnlockAll(transactionId);
-            active_txn.remove(transactionId);
+        synchronized(this.active_txn) {
+            if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                Trace.warn("RM::Abort failed--Invalid transactionId");
+                throw new InvalidTransactionException(transactionId);
+            }
+            else
+            {
+                Trace.info("RM::Aborting transaction : " + transactionId);
+                mw_locks.UnlockAll(transactionId);
+                this.active_txn.remove(transactionId);
+            }
         }
     }
 
     public Stack getHistory(int transactionId)
     {
-        return this.active_txn.get(transactionId).txn_hist;
+        synchronized(this.active_txn) {
+            return this.active_txn.get(transactionId).txn_hist;
+        }
     }
 
     public boolean shutdown() throws RemoteException
     {
-        if (!active_txn.isEmpty()) {
-            Trace.warn("RM::Shutdown failed--transaction active");
-            return false;
-        }
-        else
-        {
-            /* TODO: store data? */
-            // if (!MiddleWareImpl.rm_car.shutdown()) return false;
-            // if (!rm_room.shutdown()) return false;
-            // if (!rm_flight.shutdown()) return false;
-            // 
+        synchronized(this.active_txn) {
+            if (!this.active_txn.isEmpty()) {
+                Trace.warn("RM::Shutdown failed--transaction active");
+                return false;
+            }
         }
         return true;
     }
 
     public boolean requestLock(int xid, String strData, int lockType)
     {
-        Transaction t = active_txn.get(xid);
-        t.op_count++;
-        active_txn.put(xid, t);
+        synchronized(this.active_txn) {
+            Transaction t = this.active_txn.get(xid);
+            t.op_count++;
+            this.active_txn.put(xid, t);
+        }
         //System.out.println(active_txn.get(xid).op_count);
         try {
             return mw_locks.Lock(xid, strData, lockType);
@@ -109,7 +118,7 @@ public class TransactionManager
 class TimeThread extends Thread {
     TransactionManager tm;
     int txnid;
-    int time_to_live = 30000;
+    int time_to_live = 60000;
 
     public TimeThread (TransactionManager tm, int txnid) {
         this.tm = tm;

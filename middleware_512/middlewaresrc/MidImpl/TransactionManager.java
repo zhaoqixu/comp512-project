@@ -74,7 +74,9 @@ public class TransactionManager
     public Stack getHistory(int transactionId)
     {
         synchronized(this.active_txn) {
-            return this.active_txn.get(transactionId).txn_hist;
+            Transaction t = this.active_txn.get(transactionId);
+            if (t!= null) return t.txn_hist;
+            else return null;
         }
     }
 
@@ -103,7 +105,7 @@ public class TransactionManager
         catch (DeadlockException dle) {
             Trace.warn("RM::Lock failed--Deadlock exist");
             try {
-            abort(xid);
+                abort(xid);
             }
             catch (Exception e){
                 System.out.println(e.getMessage());
@@ -126,30 +128,26 @@ class TimeThread extends Thread {
     }
 
     public void run () {
-        // try{
         long start = System.currentTimeMillis();
-        // PrintWriter writer = new PrintWriter("trace.txt", "UTF-8");
         int old_count = 0;
         while(true){
             long elapsedTimeMills = System.currentTimeMillis()-start;
             if (elapsedTimeMills > time_to_live){
-                // writer.println("------------------------------------");                
-                // writer.println(tm.active_txn.get(txnid).op_count);
-                // writer.println(old_count);                
-                // writer.println(elapsedTimeMills);
                 try {
-                    if(tm.active_txn.get(txnid).op_count > old_count){
-                        start = System.currentTimeMillis();
-                        old_count = tm.active_txn.get(txnid).op_count;
-                    }
-                    else{
-                        try {
-                            tm.abort(txnid); //time out
-                            break;
+                    synchronized (tm.active_txn) {
+                        if(tm.active_txn.get(txnid).op_count > old_count){
+                            start = System.currentTimeMillis();
+                            old_count = tm.active_txn.get(txnid).op_count;
                         }
-                        catch (Exception e)
-                        {
-                            System.out.println(e.getMessage());
+                        else{
+                            try {
+                                tm.abort(txnid); //time out
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                System.out.println(e.getMessage());
+                            }
                         }
                     }
                 }
@@ -158,8 +156,5 @@ class TimeThread extends Thread {
                 }
             }
         }
-        // writer.close();
-    // }
-    // catch(Exception e){}
     }
 }

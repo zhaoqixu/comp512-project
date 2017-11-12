@@ -10,17 +10,17 @@ import java.io.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
-    
+
 public class RespTimeOneClient
 {
     static String message = "blank";
     static MiddleWare mw = null;
+    
     public static void main(String args[])
     {
         RespTimeOneClient obj = new RespTimeOneClient();
-
-        int type = 1; // 1: one RM, 2: multiple RMs
-
+        int transaction_type = 1;     
+        boolean multiRM = false;        
         String server = "localhost";
         int port = 1088;
         if (args.length > 0)
@@ -29,9 +29,13 @@ public class RespTimeOneClient
         }
         if (args.length > 1)
         {
-            type = Integer.parseInt(args[1]);
+            transaction_type = Integer.parseInt(args[1]);
         }
         if (args.length > 2)
+        {
+            multiRM = Boolean.parseBoolean(args[2]);
+        }
+        if (args.length > 3)
         {
             System.out.println ("Usage: java client [rmihost [rmiport]]");
             System.exit(1);
@@ -66,14 +70,14 @@ public class RespTimeOneClient
 
         int iterations = 1000; // the number of transactions submitted during the test run        
         int iterations_warmup = 100;
-        warmUp(type, iterations_warmup);
+        warmUp(multiRM, iterations_warmup);
         long before = System.currentTimeMillis();
         for(int i=0; i<iterations; i++){
             long start = System.currentTimeMillis();
-            if (type == 1) {
-                oneRM();
+            if (multiRM) {
+                multiRM(transaction_type);            
             } else {
-                multiRM();
+                oneRM(transaction_type);
             }
             long end = System.currentTimeMillis();
             System.out.println(end-start);
@@ -82,15 +86,54 @@ public class RespTimeOneClient
         System.out.println(after-before);
     }
     
-    public static void warmUp(int type, int iterations_warmup) {
+    public static void warmUp(boolean multiRM, int iterations_warmup) {
         try {
-            if (type == 1) {
+            Random rn = new Random();
+            if (!multiRM) {
                 for(int i=0; i<iterations_warmup; i++) {
-                    oneRM();
+                    int transactionId = mw.start();
+                    mw.addCars(transactionId,"Beijing",3,1000);
+                    //////////////////////////////////////////
+                    mw.addCars(transactionId,"Montreal",3,1000);
+                    mw.queryCars(transactionId,"Montreal");
+                    mw.queryCarsPrice(transactionId,"Montreal");
+                    mw.deleteCars(transactionId,"Montreal");
+
+                    mw.addCars(transactionId,"Montreal",3,1000);
+                    mw.queryCars(transactionId,"Montreal");
+                    mw.queryCarsPrice(transactionId,"Montreal");
+                    mw.deleteCars(transactionId,"Montreal");
+
+                    mw.addCars(transactionId,"Montreal",3,1000);
+                    mw.queryCars(transactionId,"Montreal");
+                    mw.queryCarsPrice(transactionId,"Montreal");
+                    mw.deleteCars(transactionId,"Montreal");
+
+                    mw.commit(transactionId);
                 }
             } else {
                 for(int i=0; i<iterations_warmup; i++) {
-                    multiRM();
+                    int transactionId = mw.start();
+                    mw.addCars(transactionId,"Beijing",3,1000);
+                    mw.addFlight(transactionId,12345,3,2000);
+                    mw.addRooms(transactionId,"Shanghai",3,3000);
+                    /////////////////////////////////////////////
+                    mw.addFlight(transactionId,1000,3,2000);
+                    mw.queryFlight(transactionId,1000);
+                    mw.queryFlightPrice(transactionId,1000);
+                    mw.deleteFlight(transactionId,1000);
+            
+                    mw.addCars(transactionId,"Toronto",3,2000);
+                    mw.queryCars(transactionId,"Toronto");
+                    mw.queryCarsPrice(transactionId,"Toronto");
+                    mw.deleteCars(transactionId,"Toronto");
+            
+                    mw.addRooms(transactionId,"Ottawa",3,3000);
+                    mw.queryRooms(transactionId,"Ottawa");
+                    mw.queryRoomsPrice(transactionId,"Ottawa");
+                    mw.deleteRooms(transactionId,"Ottawa");
+
+                    mw.commit(transactionId);
                 }
             }
         }
@@ -101,11 +144,35 @@ public class RespTimeOneClient
         }
     }
 
-    public static void oneRM() {
+    public static void oneRM(int transaction_type) {
         try {
-            int transactionId = mw.start();
-            txnTypeOne(transactionId);
-            mw.commit(transactionId);
+            int transactionId = mw.start();            
+            switch(transaction_type) {
+                case 1:
+                    txnTypeOne(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 2:
+                    txnTypeOne(transactionId);
+                    mw.abort(transactionId);
+                    break;
+                case 3:
+                    txnTypeThree(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 4:
+                    txnTypeThree(transactionId);
+                    mw.abort(transactionId);
+                    break;
+                case 5:
+                    txnTypeFive(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 6:
+                    txnTypeFive(transactionId);
+                    mw.abort(transactionId);
+                    break;
+            }
         }
         catch(Exception e) {
             System.out.println("EXCEPTION:");
@@ -114,11 +181,35 @@ public class RespTimeOneClient
         }
     }
 
-    public static void multiRM() {
+    public static void multiRM(int transaction_type) {
         try {
-            int transactionId = mw.start();
-            txnTypeTwo(transactionId);
-            mw.commit(transactionId);
+            int transactionId = mw.start();         
+            switch(transaction_type) {
+                case 1:
+                    txnTypeTwo(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 2:
+                    txnTypeTwo(transactionId);
+                    mw.abort(transactionId);
+                    break;
+                case 3:
+                    txnTypeFour(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 4:
+                    txnTypeFour(transactionId);
+                    mw.abort(transactionId);
+                    break;
+                case 5:
+                    txnTypeSix(transactionId);
+                    mw.commit(transactionId);
+                    break;
+                case 6:
+                    txnTypeSix(transactionId);
+                    mw.abort(transactionId);
+                    break;
+            }
         }
         catch(Exception e) {
             System.out.println("EXCEPTION:");
@@ -127,7 +218,76 @@ public class RespTimeOneClient
         }
     }
 
+    // 12 read oneRM
     public static void txnTypeOne(int transactionId) throws Exception{
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+    }
+
+    // 12 read multiRM
+    public static void txnTypeTwo(int transactionId) throws Exception{
+        mw.queryFlight(transactionId,12345);
+        mw.queryFlightPrice(transactionId,12345);
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryRooms(transactionId,"Shanghai");
+        mw.queryRoomsPrice(transactionId,"Shanghai");
+        mw.queryFlight(transactionId,12345);
+        mw.queryFlightPrice(transactionId,12345);
+        mw.queryCars(transactionId,"Beijing");
+        mw.queryCarsPrice(transactionId,"Beijing");
+        mw.queryRooms(transactionId,"Shanghai");
+        mw.queryRoomsPrice(transactionId,"Shanghai");
+    }
+
+    // 12 write oneRM
+    public static void txnTypeThree(int transactionId) throws Exception{
+        mw.addCars(transactionId,"Montreal",3,1000);
+        mw.deleteCars(transactionId,"Montreal");        
+        mw.addCars(transactionId,"Montreal",3,1000);        
+        mw.deleteCars(transactionId,"Montreal");
+        
+        mw.addCars(transactionId,"Toronto",3,2000);
+        mw.deleteCars(transactionId,"Toronto");        
+        mw.addCars(transactionId,"Toronto",3,2000);
+        mw.deleteCars(transactionId,"Toronto");
+
+        mw.addCars(transactionId,"Ottawa",3,3000);
+        mw.deleteCars(transactionId,"Ottawa");
+        mw.addCars(transactionId,"Toronto",3,2000);
+        mw.deleteCars(transactionId,"Toronto");
+    }
+
+    // 12 write  multiRM
+    public static void txnTypeFour(int transactionId) throws Exception{
+        mw.addCars(transactionId,"Montreal",3,1000);
+        mw.deleteCars(transactionId,"Montreal");
+        mw.addCars(transactionId,"Montreal",3,1000);
+        mw.deleteCars(transactionId,"Montreal");
+
+        mw.addFlight(transactionId,1000,3,2000);
+        mw.deleteFlight(transactionId,1000);
+        mw.addFlight(transactionId,1000,3,2000);
+        mw.deleteFlight(transactionId,1000);
+
+        mw.addRooms(transactionId,"Ottawa",3,3000);
+        mw.deleteRooms(transactionId,"Ottawa");
+        mw.addRooms(transactionId,"Ottawa",3,3000);
+        mw.deleteRooms(transactionId,"Ottawa");
+    }
+
+    // 6 read + 6 write oneRM
+    public static void txnTypeFive(int transactionId) throws Exception{
         mw.addCars(transactionId,"Montreal",3,1000);
         mw.queryCars(transactionId,"Montreal");
         mw.queryCarsPrice(transactionId,"Montreal");
@@ -144,25 +304,22 @@ public class RespTimeOneClient
         mw.deleteCars(transactionId,"Ottawa");
     }
 
-    public static void txnTypeTwo(int transactionId) throws Exception{
+    // 6 read + 6 write multiRM
+    public static void txnTypeSix(int transactionId) throws Exception{
+        mw.addCars(transactionId,"Montreal",3,1000);
+        mw.queryCars(transactionId,"Montreal");
+        mw.queryCarsPrice(transactionId,"Montreal");
+        mw.deleteCars(transactionId,"Montreal");
+
         mw.addFlight(transactionId,1000,3,2000);
         mw.queryFlight(transactionId,1000);
         mw.queryFlightPrice(transactionId,1000);
         mw.deleteFlight(transactionId,1000);
-
-        mw.addCars(transactionId,"Toronto",3,2000);
-        mw.queryCars(transactionId,"Toronto");
-        mw.queryCarsPrice(transactionId,"Toronto");
-        mw.deleteCars(transactionId,"Toronto");
 
         mw.addRooms(transactionId,"Ottawa",3,3000);
         mw.queryRooms(transactionId,"Ottawa");
         mw.queryRoomsPrice(transactionId,"Ottawa");
         mw.deleteRooms(transactionId,"Ottawa");
     }
-
-    // public static void txnTypeThree(int transactionId) {
-        
-    // }
-        
+    
 }

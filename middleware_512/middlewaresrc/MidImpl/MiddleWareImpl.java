@@ -866,7 +866,7 @@ public class MiddleWareImpl implements MiddleWare
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
         Stack<Vector> history = txn_manager.getHistory(transactionId);
-        if (history == null) return false;
+        if (history == null) return;
         while (!history.empty())
         {
             Vector<String> v = history.pop();

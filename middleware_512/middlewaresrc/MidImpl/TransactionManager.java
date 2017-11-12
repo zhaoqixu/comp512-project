@@ -120,7 +120,7 @@ public class TransactionManager
 class TimeThread extends Thread {
     TransactionManager tm;
     int txnid;
-    int time_to_live = 60000;
+    long time_to_live = 60000;
 
     public TimeThread (TransactionManager tm, int txnid) {
         this.tm = tm;
@@ -128,18 +128,16 @@ class TimeThread extends Thread {
     }
 
     public void run () {
-        long start = System.currentTimeMillis();
+        long start = 0;
+        long end = 0;
+        long elapsedTimeMills = 0;
         int old_count = 0;
         while(true){
-            long elapsedTimeMills = System.currentTimeMillis()-start;
-            if (elapsedTimeMills > time_to_live){
-                try {
-                    synchronized (tm.active_txn) {
-                        if(tm.active_txn.get(txnid).op_count > old_count){
-                            start = System.currentTimeMillis();
-                            old_count = tm.active_txn.get(txnid).op_count;
-                        }
-                        else{
+            start = System.currentTimeMillis();
+            try {
+                synchronized (tm.active_txn) {
+                    time_to_live = time_to_live - elapsedTimeMills;                    
+                    if (time_to_live < 0){
                             try {
                                 tm.abort(txnid); //time out
                                 break;
@@ -148,12 +146,17 @@ class TimeThread extends Thread {
                             {
                                 System.out.println(e.getMessage());
                             }
-                        }
+                    }
+                    else if (time_to_live > 0 && tm.active_txn.get(txnid).op_count > old_count) {
+                        time_to_live = 60000;
+                        old_count = tm.active_txn.get(txnid).op_count;
                     }
                 }
-                catch (NullPointerException npe) {
-                    return;
+                end = System.currentTimeMillis();
+                elapsedTimeMills = end - start;
                 }
+            catch (NullPointerException npe) {
+                return;
             }
         }
     }

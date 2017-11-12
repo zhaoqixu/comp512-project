@@ -140,9 +140,16 @@ the final destination */
 
     public int start() throws RemoteException;
 
+    public int start(int transactionId) throws RemoteException;
+    
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
     
+    public boolean local_commit(int transactionId)
+    throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException;
     
+    public void local_abort(int transactionId) throws RemoteException, InvalidTransactionException;
+
     public boolean shutdown() throws RemoteException;
 }

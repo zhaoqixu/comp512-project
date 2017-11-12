@@ -93,18 +93,22 @@ public class client_test
             obj.runCmd(obj, "newcustomerid,1,111");
             obj.runCmd(obj, "itinerary,1,111,3,4,2,2,3,4,1,C,True,False");
             // obj.runCmd(obj, "newcustomerid,1,222");
+            // obj.runCmd(obj, "")
             obj.runCmd(obj, "commit,1");
             obj.runCmd(obj, "quit");
         }
         else if (client_name == 2) {
             obj.runCmd(obj, "start");
+            // obj.runCmd(obj, "newcar,2,A,1,1");
             obj.runCmd(obj, "deletecustomer,2,111");
             obj.runCmd(obj, "abort,2");
             obj.runCmd(obj, "quit");
         }
         else if (client_name == 3) {
             obj.runCmd(obj, "start");
-            obj.runCmd(obj, "newroom,3,A,1,1");
+            // obj.runCmd(obj, "newroom,3,A,1,1");
+            obj.runCmd(obj, "newcustomerid,3,222");
+            obj.runCmd(obj, "reservecar,3,222,D");
             obj.runCmd(obj, "abort,3");
             obj.runCmd(obj, "quit");
         }

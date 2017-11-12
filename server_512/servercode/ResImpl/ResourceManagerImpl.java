@@ -17,6 +17,7 @@ import java.rmi.RMISecurityManager;
 public class ResourceManagerImpl implements ResourceManager 
 {
     protected RMHashtable m_itemHT = new RMHashtable();
+    protected Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
     protected static String rm_name = "name";
     
     public static void main(String args[]) {
@@ -167,6 +168,32 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
         throws RemoteException
     {
+        int old_price = queryFlightPrice(id, flightNum);
+        Trace.info("RM::addFlight(" + id + ", " + flightNum + ", $" + flightPrice + ", " + flightSeats + ") called" );
+        Flight curObj = (Flight) readData( id, Flight.getKey(flightNum) );
+        if ( curObj == null ) {
+            // doesn't exist...add it
+            Flight newObj = new Flight( flightNum, flightSeats, flightPrice );
+            writeData( id, newObj.getKey(), newObj );
+            Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats=" +
+                    flightSeats + ", price=$" + flightPrice );
+        } else {
+            // add seats to existing flight and update the price...
+            curObj.setCount( curObj.getCount() + flightSeats );
+            if ( flightPrice > 0 ) {
+                curObj.setPrice( flightPrice );
+            } // if
+            writeData( id, curObj.getKey(), curObj );
+            Trace.info("RM::addFlight(" + id + ") modified existing flight " + flightNum + ", seats=" + curObj.getCount() + ", price=$" + flightPrice );
+        } // else
+        String command = "newflight";
+        this.active_txn.get(id).addHistory(command, Integer.toString(flightNum), Integer.toString(flightSeats), Integer.toString(old_price));
+        return(true);
+    }
+
+    public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice, boolean no_history)
+        throws RemoteException
+    {
         Trace.info("RM::addFlight(" + id + ", " + flightNum + ", $" + flightPrice + ", " + flightSeats + ") called" );
         Flight curObj = (Flight) readData( id, Flight.getKey(flightNum) );
         if ( curObj == null ) {
@@ -192,7 +219,15 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean deleteFlight(int id, int flightNum)
         throws RemoteException
     {
-        return deleteItem(id, Flight.getKey(flightNum));
+        int old_price = queryFlightPrice(id, flightNum);
+        int old_count = queryFlight(id, flightNum);
+        if (deleteItem(id, Flight.getKey(flightNum)))
+        {
+            String command = "deleteflight";
+            this.active_txn.get(id).addHistory(command, Integer.toString(flightNum), Integer.toString(old_count), Integer.toString(old_price));
+            return true;
+        }
+        else return false;
     }
 
 
@@ -200,6 +235,31 @@ public class ResourceManagerImpl implements ResourceManager
     // Create a new room location or add rooms to an existing location
     //  NOTE: if price <= 0 and the room location already exists, it maintains its current price
     public boolean addRooms(int id, String location, int count, int price)
+        throws RemoteException
+    {
+        int old_price = queryRoomsPrice(id, location);
+        Trace.info("RM::addRooms(" + id + ", " + location + ", " + count + ", $" + price + ") called" );
+        Hotel curObj = (Hotel) readData( id, Hotel.getKey(location) );
+        if ( curObj == null ) {
+            // doesn't exist...add it
+            Hotel newObj = new Hotel( location, count, price );
+            writeData( id, newObj.getKey(), newObj );
+            Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count=" + count + ", price=$" + price );
+        } else {
+            // add count to existing object and update price...
+            curObj.setCount( curObj.getCount() + count );
+            if ( price > 0 ) {
+                curObj.setPrice( price );
+            } // if
+            writeData( id, curObj.getKey(), curObj );
+            Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+        } // else
+        String command = "newroom";
+        this.active_txn.get(id).addHistory(command, location, Integer.toString(count), Integer.toString(old_price));
+        return(true);
+    }
+
+    public boolean addRooms(int id, String location, int count, int price, boolean no_history)
         throws RemoteException
     {
         Trace.info("RM::addRooms(" + id + ", " + location + ", " + count + ", $" + price + ") called" );
@@ -217,21 +277,53 @@ public class ResourceManagerImpl implements ResourceManager
             } // if
             writeData( id, curObj.getKey(), curObj );
             Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
-        } // else
+        } // else        String command = "newroom";
         return(true);
-    }
+    }   
 
     // Delete rooms from a location
     public boolean deleteRooms(int id, String location)
         throws RemoteException
     {
-        return deleteItem(id, Hotel.getKey(location));
-        
+        int old_price = queryRoomsPrice(id, location);
+        int old_count = queryRooms(id, location);
+        if (deleteItem(id, Hotel.getKey(location)))
+        {
+            String command = "deleteroom";
+            this.active_txn.get(id).addHistory(command, location, Integer.toString(old_count), Integer.toString(old_price));
+            return true;
+        }
+        else return false;
     }
 
     // Create a new car location or add cars to an existing location
     //  NOTE: if price <= 0 and the location already exists, it maintains its current price
     public boolean addCars(int id, String location, int count, int price)
+        throws RemoteException
+    {
+        int old_price = queryCarsPrice(id, location);
+        Trace.info("RM::addCars(" + id + ", " + location + ", " + count + ", $" + price + ") called" );
+        Car curObj = (Car) readData( id, Car.getKey(location) );
+        if ( curObj == null ) {
+            // car location doesn't exist...add it
+            Car newObj = new Car( location, count, price );
+            writeData( id, newObj.getKey(), newObj );
+            Trace.info("RM::addCars(" + id + ") created new location " + location + ", count=" + count + ", price=$" + price );
+        } else {
+            // add count to existing car location and update price...
+            curObj.setCount( curObj.getCount() + count );
+            if ( price > 0 ) {
+                curObj.setPrice( price );
+            } // if
+            writeData( id, curObj.getKey(), curObj );
+            Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+        } // else
+        String command = "newcar";
+        this.active_txn.get(id).addHistory(command, location, Integer.toString(count), Integer.toString(old_price));
+        return(true);
+    }
+
+    public boolean addCars(int id, String location, int count, int price, boolean no_history)
         throws RemoteException
     {
         Trace.info("RM::addCars(" + id + ", " + location + ", " + count + ", $" + price + ") called" );
@@ -258,7 +350,15 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean deleteCars(int id, String location)
         throws RemoteException
     {
-        return deleteItem(id, Car.getKey(location));
+        int old_price = queryCarsPrice(id, location);
+        int old_count = queryCars(id, location);
+        if (deleteItem(id, Car.getKey(location)))
+        {
+            String command = "deletecar";
+            this.active_txn.get(id).addHistory(command, location, Integer.toString(old_count), Integer.toString(old_price));
+            return true;
+        }
+        else return false;
     }
 
 
@@ -446,7 +546,15 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean reserveCar(int id, int customerID, String location)
         throws RemoteException
     {
-        return reserveItem(id, customerID, Car.getKey(location), location);
+        if (reserveItem(id, customerID, Car.getKey(location), location))
+        {
+            String s = "car-" + location;
+            String key = s.toLowerCase();
+            String command = "reservecar";
+            this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, location);
+            return true;
+        }
+        else return false;
     }
 
 
@@ -454,13 +562,29 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean reserveRoom(int id, int customerID, String location)
         throws RemoteException
     {
-        return reserveItem(id, customerID, Hotel.getKey(location), location);
+        if (reserveItem(id, customerID, Hotel.getKey(location), location))
+        {
+            String s = "room-" + location;
+            String key = s.toLowerCase();
+            String command = "reserveroom";
+            this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, location);
+            return true;
+        }
+        else return false;
     }
     // Adds flight reservation to this customer.  
     public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
     {
-        return reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum));
+        if (reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum)))
+        {
+            String s = "flight-" + flightNum;
+            String key = s.toLowerCase();
+            String command = "reserveflight";
+            this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, Integer.toString(flightNum));
+            return true;
+        }
+        else return false;
     }
     
     // Reserve an itinerary 
@@ -471,6 +595,19 @@ public class ResourceManagerImpl implements ResourceManager
     }
 
     public void freeItemRes(int id, int customerID,String reservedkey, int reservedCount)
+        throws RemoteException
+    {
+        String command = "freeitemres";
+        this.active_txn.get(id).addHistory(command, Integer.toString(customerID),reservedkey, Integer.toString(reservedCount));
+        Trace.info("RM::freeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
+        ReservableItem item  = (ReservableItem) readData(id, reservedkey);
+        item.setReserved(item.getReserved()-reservedCount);
+        item.setCount(item.getCount()+reservedCount);
+        // writeData(id, reservedkey, item);
+        Trace.info("RM::freeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " which is reserved" +  item.getReserved() +  " times and is still available " + item.getCount() + " times"  );
+    }
+
+    public void freeItemRes(int id, int customerID,String reservedkey, int reservedCount, boolean no_history)
         throws RemoteException
     {
         Trace.info("RM::freeItemRes(" + id + ", " + customerID + ") has reserved " + reservedkey + " " +  reservedCount +  " times"  );
@@ -494,38 +631,95 @@ public class ResourceManagerImpl implements ResourceManager
 
 
     /* RM do not handle start commit and abort */
-    public int start() throws RemoteException { return 0; };
+    public int start(int transactionId) throws RemoteException
+    {
+        synchronized(this.active_txn) {
+            Transaction txn = new Transaction(transactionId);
+            this.active_txn.put(transactionId, txn);
+        }
+        return transactionId;
+    }
 
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-        // if (transactionId < 1 ) {
-        //     Trace.warn("RM::Commit failed--Invalid transactionId");
-        //     throw new InvalidTransactionException(transactionId);
-        // }
-        // else
-        // {
-        //     Trace.info("RM::Committing transaction : " + transactionId);
-        //     if (rm_locks.UnlockAll(transactionId)) {
-        //         // while (active_txn.contains(transactionId)) {
-        //         // active_txn.remove(transactionId);
-        //         // }
-        //         return true;
-        //     }
-        //     else {
-        //         return false;
-        //     }
-        // }
+        synchronized(this.active_txn) {
+            if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                Trace.warn("RM::Commit failed--Invalid transactionId");
+                throw new InvalidTransactionException(transactionId);
+            }
+            else
+            {
+                Trace.info("RM::Committing transaction : " + transactionId);    
+                this.active_txn.remove(transactionId);
+            }
+        }
         return true;
     }
+
+    public Stack getHistory(int transactionId)
+    {
+        synchronized(this.active_txn) {
+            Transaction t = this.active_txn.get(transactionId);
+            if (t!= null) return t.txn_hist;
+            else return null;
+        }
+    }
+
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        // if (transactionId < 1) {
-        //     Trace.warn("RM::Commit failed--Invalid transactionId");
-        //     throw new InvalidTransactionException(transactionId);
-        // }
-        // else {
-        //     rm_locks.UnlockAll(transactionId);
-        // }
+        Stack<Vector> history = getHistory(transactionId);
+        if (history == null) return;
+        while (!history.empty())
+        {
+            Vector<String> v = history.pop();
+            System.out.println(v.get(0));
+            if (v.get(0).equals("newcar"))
+            {
+                removeCars(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("deletecar"))
+            {
+                recoverCars(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("reservecar"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                freeItemRes(transactionId, customer, v.get(2), 1, true);
+            }
+            else if (v.get(0).equals("newroom"))
+            {
+                removeRooms(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("deleteroom"))
+            {
+                recoverRooms(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("reserveroom"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                freeItemRes(transactionId, customer, v.get(2), 1, true);
+            }
+            else if (v.get(0).equals("newflight"))
+            {
+                removeFlight(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("deleteflight"))
+            {
+                recoverFlight(transactionId, v.get(1), v.get(2), v.get(3));
+            }
+            else if (v.get(0).equals("reserveflight"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                freeItemRes(transactionId, customer, v.get(2), 1, true);
+            }
+            else if (v.get(0).equals("freeitemres"))
+            {
+                int customerID = Integer.parseInt(v.get(1));
+                String reservedkey = v.get(2);
+                int reservedCount = Integer.parseInt(v.get(3));
+                undoFreeItemRes(transactionId, customerID, reservedkey, reservedCount);
+            }
+        }
     }
     public boolean shutdown() throws RemoteException
     {
@@ -553,6 +747,11 @@ public class ResourceManagerImpl implements ResourceManager
       
         }.start();
         return true;
+    }
+
+    public void pop(int id)
+    {
+        this.active_txn.get(id).txn_hist.pop();
     }
 
     public boolean removeFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
@@ -642,7 +841,7 @@ public class ResourceManagerImpl implements ResourceManager
         int flightNum = Integer.parseInt(sflightNum);
         int flightSeats = Integer.parseInt(sflightSeats);
         int old_flightPrice = Integer.parseInt(sold_flightPrice);
-        return addFlight(id, flightNum, flightSeats, old_flightPrice);
+        return addFlight(id, flightNum, flightSeats, old_flightPrice, true);
     }
 
     public boolean recoverRooms(int id, String slocation, String scount, String sold_price)
@@ -651,7 +850,7 @@ public class ResourceManagerImpl implements ResourceManager
         String location = slocation;
         int count = Integer.parseInt(scount);
         int old_price = Integer.parseInt(sold_price);
-        return addRooms(id, location, count, old_price);
+        return addRooms(id, location, count, old_price, true);
     }
 
     public boolean recoverCars(int id, String slocation, String scount, String sold_price)
@@ -660,6 +859,6 @@ public class ResourceManagerImpl implements ResourceManager
         String location = slocation;
         int count = Integer.parseInt(scount);
         int old_price = Integer.parseInt(sold_price);
-        return addCars(id, location, count, old_price);
+        return addCars(id, location, count, old_price, true);
     }
 }

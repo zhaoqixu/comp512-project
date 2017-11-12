@@ -1,4 +1,4 @@
-package MidImpl;
+package ResImpl;
 
 import ResInterface.*;
 import MidInterface.*;
@@ -18,7 +18,6 @@ public class Transaction
     protected int xid;
     public int op_count;
     protected Stack<Vector<String>> txn_hist = new Stack<Vector<String>>();
-    protected HashSet<Integer> rm_list = new HashSet<Integer>();
 
     public Transaction(int transactionId)
     {

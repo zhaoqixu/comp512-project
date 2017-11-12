@@ -136,13 +136,18 @@ public interface ResourceManager extends Remote
     public void freeItemRes(int id, int customer, String reservedkey, int reservedCount)
     throws RemoteException;
 
-    public int start() throws RemoteException;
+    public void freeItemRes(int id, int customerID,String reservedkey, int reservedCount, boolean no_history)
+    throws RemoteException;
+
+    public int start(int transactionId) throws RemoteException;
 
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
     
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException;
     
     public boolean shutdown() throws RemoteException;
+
+    public void pop(int id) throws RemoteException;
 
     /* Remove provided number of flights*/
     public boolean removeFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)

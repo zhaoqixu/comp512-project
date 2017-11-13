@@ -73,17 +73,21 @@ public class RespTimeOneClient
         warmUp(multiRM, iterations_warmup);
         long before = System.currentTimeMillis();
         for(int i=0; i<iterations; i++){
-            long start = System.currentTimeMillis();
+            // long start = System.currentTimeMillis();
             if (multiRM) {
                 multiRM(transaction_type);            
             } else {
                 oneRM(transaction_type);
             }
-            long end = System.currentTimeMillis();
-            System.out.println(end-start);
+            // long end = System.currentTimeMillis();
+            // System.out.println(end-start);
         }
         long after = System.currentTimeMillis();
         System.out.println(after-before);
+        try {
+            mw.shutdown();
+        }
+        catch (Exception e) {}
     }
     
     public static void warmUp(boolean multiRM, int iterations_warmup) {

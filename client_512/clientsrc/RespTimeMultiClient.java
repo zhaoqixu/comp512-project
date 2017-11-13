@@ -92,7 +92,7 @@ public class RespTimeMultiClient
         // }
         // long after = System.currentTimeMillis();
         // System.out.println(after-before);
-        System.out.println("client,time,latency");
+        System.out.println("Starting threads!");
         ExecutorService exe = Executors.newFixedThreadPool(client_num);
 		try {
 		    AutoClient[] clients = new AutoClient[client_num];
@@ -104,6 +104,10 @@ public class RespTimeMultiClient
         catch (InterruptedException e) {
             System.out.println("INTERRUPTION IN EXECUTOR!!!");
         }
+        // try {
+        //     mw.shutdown();
+        // }
+        // catch (Exception e) {}
     }
     
     public static void warmUp(int type, int iterations_warmup) {
@@ -201,7 +205,10 @@ class AutoClient implements Callable<Void>
 
     public Void call()
     {
-        while(true)
+        int count = 0;
+        long time = 0;
+        int time_interval = 500;
+        for (int i = 0; i < 1000; i++)
         {
             try {
                 long t1 = System.nanoTime();
@@ -213,15 +220,16 @@ class AutoClient implements Callable<Void>
                     multiRM();
                 }
                 long t2 = System.nanoTime();
-                // Date d = new Date();
-                System.out.printf("%d , %.3f%n", cid, (t2-t1)/1000000.0);
+                count ++;
+                time += (t2-t1)/1000000.0;
+                // System.out.printf("%d , %.3f%n", cid, (t2-t1)/1000000.0);
                 // try {
                 Random rand = new Random();
-                long randomNum = (long)rand.nextInt((1025 - 975) + 1) + 975;
+                long randomNum = (long)rand.nextInt((50) + 1) + time_interval - 25;
                 long sleep_time = randomNum - (t2 - t1) / (long)1000000.0;
                 if (sleep_time > 0)
                     Thread.sleep(sleep_time);
-                else System.out.println("NO SLEEP!");
+                // else System.out.println("NO SLEEP!");
                 // }
                 // catch(InterruptedException ie){}
             }
@@ -233,6 +241,8 @@ class AutoClient implements Callable<Void>
                 // e.printStackTrace();
             }
         }
+        System.out.println("count : " + count + " time : " + time + " avg : " + time / (long) count);
+        return null;
     }
 
     public void oneRM() {

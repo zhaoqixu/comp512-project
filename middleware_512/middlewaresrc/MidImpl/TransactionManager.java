@@ -224,6 +224,7 @@ class TimeThread extends Thread {
         long elapsedTimeMills = 0;
         int old_count = 0;
         while(true){
+	    if (tm.active_txn.get(txnid) == null) return;
             start = System.currentTimeMillis();
             try {
                 synchronized (tm.active_txn) {

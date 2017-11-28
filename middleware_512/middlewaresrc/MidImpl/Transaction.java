@@ -5,7 +5,7 @@ import MidInterface.*;
 import LockManager.*;
 
 import java.util.*;
-
+import java.io.Serializable;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -13,7 +13,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
 
-public class Transaction
+public class Transaction implements Serializable
 {
     protected int xid;
     public int op_count;

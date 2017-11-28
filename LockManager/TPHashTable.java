@@ -2,12 +2,12 @@ package LockManager;
 
 import java.util.Vector;
 import java.util.Enumeration;
-
+import java.io.Serializable;
 /*
     HashTable class for the Lock Manager.
 */
 
-public class TPHashTable
+public class TPHashTable implements Serializable
 {
     private static final int HASH_DEPTH = 8;
     

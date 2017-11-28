@@ -3,8 +3,10 @@ import ResInterface.*;
 import MidInterface.*;
 import LockManager.*;
 
-import java.util.*;
 
+import MidImpl.IOTools;
+import java.util.*;
+import java.io.File;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -25,6 +27,11 @@ public class MiddleWareImpl implements MiddleWare
     protected Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
 
     protected RMHashtable m_itemHT = new RMHashtable();
+    protected MasterRecord master = new MasterRecord();
+    protected static String rm_name = "TripMiddleWare";
+    protected static String mr_fname = "";
+    protected static String shadow_fname = "";
+    protected static String ws_fname = "";
 
     public static void main(String args[]) {
         // Figure out where server is running
@@ -39,6 +46,9 @@ public class MiddleWareImpl implements MiddleWare
             server_flight = args[0];
             server_car = args[1];
             server_room = args[2];
+            mr_fname = "" + rm_name + "_MasterRecord.txt";
+            ws_fname = "" + rm_name + "_WS_";
+            shadow_fname = "" + rm_name + "_Shadow_";
             //port = Integer.parseInt(args[1]);
         } else if (args.length != 3) {
             System.err.println ("Wrong usage");
@@ -111,6 +121,14 @@ public class MiddleWareImpl implements MiddleWare
     }
      
     public MiddleWareImpl() throws RemoteException {
+        File master_file = new File(mr_fname);
+        if (master_file.exists()) {
+            System.out.println("Master Record exists, loading from disk ......");
+            this.master = (MasterRecord) IOTools.loadFromDisk(mr_fname);
+            System.out.println("Master Record loaded.");
+            m_itemHT = (RMHashtable) IOTools.loadFromDisk(shadow_fname + Integer.toString(master.getCommittedIndex()) + ".txt");
+            System.out.println("Data hashtable loaded.");
+        }
     }
 
     // Reads a data item
@@ -829,6 +847,14 @@ public class MiddleWareImpl implements MiddleWare
         return transactionId;
     }
 
+
+    public int prepare(int transactionId)
+        throws RemoteException, TransactionAbortedException, InvalidTransactionException
+    {
+        IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
+        return 1;
+    }
+
     public boolean commit(int transactionId) 
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
@@ -846,6 +872,11 @@ public class MiddleWareImpl implements MiddleWare
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);    
+                IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                master.setLastXid(transactionId);
+                master.swap();
+                IOTools.saveToDisk(master, mr_fname);
+                IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
             }
         }
@@ -968,6 +999,7 @@ public class MiddleWareImpl implements MiddleWare
                 writeData(transactionId, cust.getKey(), cust);
             }
         }
+        IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
     }
 
     public boolean shutdown() throws RemoteException

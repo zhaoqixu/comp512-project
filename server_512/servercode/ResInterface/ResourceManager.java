@@ -3,7 +3,7 @@ package ResInterface;
 import ResImpl.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-
+import java.io.Serializable;
 import java.util.*;
 /** 
  * Simplified version from CSE 593 Univ. of Washington
@@ -21,7 +21,7 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface ResourceManager extends Remote 
+public interface ResourceManager extends Remote, Serializable
 {
     /* Add seats to a flight.  In general this will be used to create a new
      * flight, but it should be possible to add seats to an existing flight.
@@ -176,4 +176,7 @@ public interface ResourceManager extends Remote
     /* Undo a freeItemRes */
     public void undoFreeItemRes(int id, int customer, String reservedkey, int reservedCount)
     throws RemoteException;
+
+    /* prepare in 2PC*/
+    public int prepare(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 }

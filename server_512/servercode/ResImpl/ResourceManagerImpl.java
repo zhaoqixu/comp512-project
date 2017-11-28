@@ -8,6 +8,8 @@ import ResInterface.*;
 
 import java.util.*;
 
+import ResImpl.IOTools;
+import java.io.File;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -18,7 +20,12 @@ public class ResourceManagerImpl implements ResourceManager
 {
     protected RMHashtable m_itemHT = new RMHashtable();
     protected Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
+    protected MasterRecord master = new MasterRecord();
     protected static String rm_name = "name";
+    protected static String mr_fname = "";
+    protected static String shadow_fname = "";
+    protected static String ws_fname = "";
+    
     
     public static void main(String args[]) {
         // Figure out where server is running
@@ -29,6 +36,9 @@ public class ResourceManagerImpl implements ResourceManager
             server = server + ":" + args[0];
             port = Integer.parseInt(args[0]);
             rm_name = args[1];
+            mr_fname = "" + rm_name + "_MasterRecord.txt";
+            ws_fname = "" + rm_name + "_WS_";
+            shadow_fname = "" + rm_name + "_Shadow_";
         } else if (args.length != 0 &&  args.length != 1) {
             System.err.println ("Wrong usage");
             System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] [RM_NAME]");
@@ -58,6 +68,14 @@ public class ResourceManagerImpl implements ResourceManager
     }
      
     public ResourceManagerImpl() throws RemoteException {
+        File master_file = new File(mr_fname);
+        if (master_file.exists()) {
+            System.out.println("Master Record exists, loading from disk ......");
+            this.master = (MasterRecord) IOTools.loadFromDisk(mr_fname);
+            System.out.println("Master Record loaded.");
+            m_itemHT = (RMHashtable) IOTools.loadFromDisk(shadow_fname + Integer.toString(master.getCommittedIndex()) + ".txt");
+            System.out.println("Data hashtable loaded.");
+        }
     }
      
 
@@ -640,6 +658,12 @@ public class ResourceManagerImpl implements ResourceManager
         return transactionId;
     }
 
+    public int prepare(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
+    {
+        IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
+        return 1;
+    }
+
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
         synchronized(this.active_txn) {
@@ -649,7 +673,12 @@ public class ResourceManagerImpl implements ResourceManager
             }
             else
             {
-                Trace.info("RM::Committing transaction : " + transactionId);    
+                Trace.info("RM::Committing transaction : " + transactionId);
+                IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                master.setLastXid(transactionId);
+                master.swap();
+                IOTools.saveToDisk(master, mr_fname);
+                IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
             }
         }
@@ -720,7 +749,10 @@ public class ResourceManagerImpl implements ResourceManager
                 undoFreeItemRes(transactionId, customerID, reservedkey, reservedCount);
             }
         }
+        IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
     }
+
+
     public boolean shutdown() throws RemoteException
     {
         /* TODO: store data? */

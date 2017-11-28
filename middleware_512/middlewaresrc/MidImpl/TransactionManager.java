@@ -69,12 +69,47 @@ public class TransactionManager
                 Trace.info("RM::Committing transaction : " + transactionId);
                 // check rm_list
                 try {
-                for (int rm_num : this.active_txn.get(transactionId).rm_list)
+                        /*
+                        * for each rm in v:
+                        *   Thread.run {
+                        *     rm.prepare(xid)
+                        *     wait for response
+                        *   }
+                        * if all YES:
+                        *   commit
+                        *   send commit to v
+                        * else:
+                        *   abort
+                        *   send abort to v 
+                        */
+                    int answers = 0;
+                    HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
+                    for (int rm_num : rms)
                     {
-                        if (rm_num == MW_NUM) this.mw.local_commit(transactionId);
-                        else if (rm_num == FLIGHT_NUM) this.rm_flight.commit(transactionId);
-                        else if (rm_num == CAR_NUM) this.rm_car.commit(transactionId);
-                        else this.rm_room.commit(transactionId);
+                        if (rm_num == MW_NUM) answers += this.mw.prepare(transactionId);
+                        else if (rm_num == FLIGHT_NUM) answers += this.rm_flight.prepare(transactionId);
+                        else if (rm_num == CAR_NUM) answers += this.rm_car.prepare(transactionId);
+                        else answers += this.rm_room.prepare(transactionId);
+                    }
+                    if (answers == rms.size())
+                    {
+                        for (int rm_num : rms)
+                        {
+                            if (rm_num == MW_NUM) this.mw.local_commit(transactionId);
+                            else if (rm_num == FLIGHT_NUM) this.rm_flight.commit(transactionId);
+                            else if (rm_num == CAR_NUM) this.rm_car.commit(transactionId);
+                            else this.rm_room.commit(transactionId);
+                        }
+                    }
+                    else
+                    {
+                        for (int rm_num : rms)
+                        {
+                            if (rm_num == MW_NUM) this.mw.local_abort(transactionId);
+                            else if (rm_num == FLIGHT_NUM) this.rm_flight.abort(transactionId);
+                            else if (rm_num == CAR_NUM) this.rm_car.abort(transactionId);
+                            else this.rm_room.abort(transactionId);
+                        }
                     }
                 }
                 catch (Exception e) {}
@@ -211,7 +246,7 @@ public class TransactionManager
 class TimeThread extends Thread {
     TransactionManager tm;
     int txnid;
-    long time_to_live = 60000;
+    long time_to_live = 120000;
 
     public TimeThread (TransactionManager tm, int txnid) {
         this.tm = tm;

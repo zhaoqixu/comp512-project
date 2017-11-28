@@ -3,7 +3,7 @@ package MidInterface;
 import MidImpl.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-
+import java.io.Serializable;
 import java.util.*;
 /** 
  * Simplified version from CSE 593 Univ. of Washington
@@ -21,7 +21,7 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface MiddleWare extends Remote 
+public interface MiddleWare extends Remote, Serializable
 {
     /* Add seats to a flight.  In general this will be used to create a new
      * flight, but it should be possible to add seats to an existing flight.
@@ -152,4 +152,7 @@ the final destination */
     public void local_abort(int transactionId) throws RemoteException, InvalidTransactionException;
 
     public boolean shutdown() throws RemoteException;
+
+    /* prepare in 2PC*/
+    public int prepare(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 }

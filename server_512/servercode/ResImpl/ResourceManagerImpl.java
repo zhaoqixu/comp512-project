@@ -21,7 +21,9 @@ public class ResourceManagerImpl implements ResourceManager
 {
     protected RMHashtable m_itemHT = new RMHashtable();
     protected Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
+    protected Hashtable<Integer,LogFile> active_log = new Hashtable<Integer, LogFile>();
     protected MasterRecord master = new MasterRecord();
+    // protected LogFile log = new LogFile();
     protected static String rm_name = "name";
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
@@ -234,7 +236,6 @@ public class ResourceManagerImpl implements ResourceManager
     }
 
 
-    
     public boolean deleteFlight(int id, int flightNum)
         throws RemoteException
     {
@@ -656,12 +657,19 @@ public class ResourceManagerImpl implements ResourceManager
             Transaction txn = new Transaction(transactionId);
             this.active_txn.put(transactionId, txn);
         }
+        LogFile log = new LogFile(transactionId);
+        this.active_log.put(transactionId, log);
         return transactionId;
     }
 
     public int prepare(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
-    {
+    {   
+        String record = "BEFORE_YES";
+        this.active_log.get(transactionId).record.add(record);
+        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
         IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
+        record = "AFTER_YES";
+        this.active_log.get(transactionId).record.add(record);
         return 1;
     }
 
@@ -675,12 +683,19 @@ public class ResourceManagerImpl implements ResourceManager
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
+                String record = "BEFORE_COMMIT";
+                this.active_log.get(transactionId).record.add(record);
+                IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + Integer.toString(transactionId) + ".log");                
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+                record = "AFTER_COMMIT";
+                this.active_log.get(transactionId).record.add(record);
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
+                IOTools.deleteFile(rm_name + Integer.toString(transactionId) + ".log");
+                this.active_log.remove(transactionId);
             }
         }
         return true;
@@ -699,6 +714,8 @@ public class ResourceManagerImpl implements ResourceManager
     {
         Stack<Vector> history = getHistory(transactionId);
         if (history == null) return;
+        String record = "BEFORE_ABORT";
+        this.active_log.get(transactionId).record.add(record);        
         while (!history.empty())
         {
             Vector<String> v = history.pop();
@@ -750,7 +767,11 @@ public class ResourceManagerImpl implements ResourceManager
                 undoFreeItemRes(transactionId, customerID, reservedkey, reservedCount);
             }
         }
+        record = "AFTER_ABORT";
+        this.active_log.get(transactionId).record.add(record);
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+        IOTools.deleteFile(rm_name + Integer.toString(transactionId) + ".log");
+        this.active_log.remove(transactionId);
     }
 
 

@@ -8,13 +8,14 @@ import MidImpl.IOTools;
 import MidImpl.CrashException;
 import java.util.*;
 import java.io.File;
+import java.io.Serializable;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
-public class MiddleWareImpl implements MiddleWare 
+public class MiddleWareImpl implements MiddleWare, Serializable
 {
     public static final int READ = 0;
     public static final int WRITE = 1;
@@ -32,17 +33,17 @@ public class MiddleWareImpl implements MiddleWare
     protected static String rm_name = "TripMiddleWare";
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
+    // protected static String shadow_tm_fname = "";
     protected static String ws_fname = "";
     protected int crash_mode = 0;
+    protected static String server_flight = "localhost";
+    protected static String server_car = "localhost";
+    protected static String server_room = "localhost";
+
+    protected static int port_local = 1088;
+    protected static int port = 2199;
 
     public static void main(String args[]) {
-        // Figure out where server is running
-        String server_flight = "localhost";
-        String server_car = "localhost";
-        String server_room = "localhost";
-
-        int port_local = 1088;
-        int port = 2199;
 
         if (args.length == 3) {
             server_flight = args[0];
@@ -51,6 +52,7 @@ public class MiddleWareImpl implements MiddleWare
             mr_fname = "" + rm_name + "_MasterRecord.txt";
             ws_fname = "" + rm_name + "_WS_";
             shadow_fname = "" + rm_name + "_Shadow_";
+            // shadow_tm_fname = "" + rm_name + "_Shadow_TM_";
             //port = Integer.parseInt(args[1]);
         } else if (args.length != 3) {
             System.err.println ("Wrong usage");
@@ -108,8 +110,15 @@ public class MiddleWareImpl implements MiddleWare
                 System.out.println("Unsuccessful connection to Room RM");
             }
             // make call on remote method
-
-            obj.txn_manager = new TransactionManager(mw, rm_flight, rm_car, rm_room);
+            File file = new File("TransactionManager.txt");
+            if (file.exists()) {
+                obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
+                System.out.println("Transaction manager loaded.");
+                obj.txn_manager.setMW(obj);
+            }
+            else {
+                obj.txn_manager = new TransactionManager(mw, rm_flight, rm_car, rm_room);
+            }
             System.err.println("MiddleWare Server ready");
         } catch (Exception e) {
             System.err.println("MiddleWare Server exception: " + e.toString());
@@ -128,7 +137,7 @@ public class MiddleWareImpl implements MiddleWare
             System.out.println("Master Record exists, loading from disk ......");
             this.master = (MasterRecord) IOTools.loadFromDisk(mr_fname);
             System.out.println("Master Record loaded.");
-            m_itemHT = (RMHashtable) IOTools.loadFromDisk(shadow_fname + Integer.toString(master.getCommittedIndex()) + ".txt");
+            this.m_itemHT = (RMHashtable) IOTools.loadFromDisk(shadow_fname + Integer.toString(master.getCommittedIndex()) + ".txt");
             System.out.println("Data hashtable loaded.");
         }
     }
@@ -875,6 +884,7 @@ public class MiddleWareImpl implements MiddleWare
             {
                 Trace.info("RM::Committing transaction : " + transactionId);    
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                // IOTools.saveToDisk(this.txn_manager, shadow_tm_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
@@ -1065,6 +1075,34 @@ public class MiddleWareImpl implements MiddleWare
                 break;
             default:
                 break;  
+        }
+    }
+
+    public void buildLink(String rm_name) throws RemoteException
+    {
+        try {
+            if (rm_name.equals("FlightRM"))
+            {
+                Registry registry_flight = LocateRegistry.getRegistry(server_flight, port);
+                this.rm_flight = (ResourceManager) registry_flight.lookup("FlightRM");
+                this.txn_manager.setFlightRM(this.rm_flight);
+            }
+            else if (rm_name.equals("CarRM"))
+            {
+                Registry registry_car = LocateRegistry.getRegistry(server_car, port);
+                this.rm_car = (ResourceManager) registry_car.lookup("CarRM");
+                this.txn_manager.setCarRM(this.rm_car);
+            }
+            else if (rm_name.equals("RoomRM"))
+            {
+                Registry registry_room = LocateRegistry.getRegistry(server_room, port);
+                this.rm_room = (ResourceManager) registry_room.lookup("RoomRM");
+                this.txn_manager.setRoomRM(this.rm_room);
+            }
+            else System.out.println("buildLink failed with wrong inputs");
+        } catch (Exception e) {
+            System.err.println("MiddleWare Server exception: " + e.toString());
+            e.printStackTrace();
         }
     }
 }

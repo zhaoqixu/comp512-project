@@ -8,6 +8,7 @@ import ResInterface.*;
 
 import java.util.*;
 
+import MidInterface.MiddleWare;
 import ResImpl.IOTools;
 import ResImpl.CrashException;
 import java.io.File;
@@ -25,16 +26,20 @@ public class ResourceManagerImpl implements ResourceManager
     protected MasterRecord master = new MasterRecord();
     // protected LogFile log = new LogFile();
     protected static String rm_name = "name";
+    protected static String mw_name = "TripMiddleWare";
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
     protected static String ws_fname = "";
     protected int crash_mode = 0;
-    
+    public static Registry registry;
+    private static MiddleWare mw = null;
+
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
+        String mw_host = "localhost";
         int port = 2199;
-
+        int mw_port = 1088;
         if (args.length == 2) {
             server = server + ":" + args[0];
             port = Integer.parseInt(args[0]);
@@ -42,7 +47,33 @@ public class ResourceManagerImpl implements ResourceManager
             mr_fname = "" + rm_name + "_MasterRecord.txt";
             ws_fname = "" + rm_name + "_WS_";
             shadow_fname = "" + rm_name + "_Shadow_";
-        } else if (args.length != 0 &&  args.length != 1) {
+        } else if (args.length == 4) {
+            server = server + ":" + args[0];
+            port = Integer.parseInt(args[0]);
+            rm_name = args[1];
+            mw_host = args[2];
+            mw_port = Integer.parseInt(args[3]);
+            mr_fname = "" + rm_name + "_MasterRecord.txt";
+            ws_fname = "" + rm_name + "_WS_";
+            shadow_fname = "" + rm_name + "_Shadow_";
+            try {
+                Registry mw_registry = LocateRegistry.getRegistry(mw_host, mw_port);
+                mw = (MiddleWare) mw_registry.lookup(mw_name);
+                if (mw != null)
+                {
+                    System.out.println("Successfully connected to the middleware");
+                }
+                else
+                {
+                    System.out.println("Connect to the middleware failed");
+                    System.exit(1);
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        } else  {
             System.err.println ("Wrong usage");
             System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] [RM_NAME]");
             System.exit(1);
@@ -55,9 +86,13 @@ public class ResourceManagerImpl implements ResourceManager
             ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
             // Bind the remote object's stub in the registry
-            Registry registry = LocateRegistry.getRegistry(port);
+            registry = LocateRegistry.getRegistry(port);
             registry.rebind(rm_name, rm);
 
+            if (mw != null){
+                mw.buildLink(rm_name);
+                // TODO: recovery
+            }
             System.err.println(rm_name +" server ready");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());

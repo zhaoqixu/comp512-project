@@ -32,4 +32,15 @@ then
 	rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false 2199 &
 	javac ResImpl/ResourceManagerImpl.java
 	java -Djava.security.policy=java.policy $RM_PATH  ResImpl.ResourceManagerImpl 2199 $2
+elif [ $1 = 'r' ]
+then
+	cd server_512/servercode
+	killall -9 rmiregistry
+	rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false 2199 &
+	javac ResImpl/ResourceManagerImpl.java
+	java -Djava.security.policy=java.policy $RM_PATH  ResImpl.ResourceManagerImpl 2199 $2 $3 1088
+elif [ $1 = 'z' ]
+then
+	find . -name '*.txt' -delete
+	find . -name '*.log' -delete
 fi

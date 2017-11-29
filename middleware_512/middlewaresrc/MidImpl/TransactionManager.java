@@ -5,7 +5,7 @@ import LockManager.*;
 
 import java.util.*;
 // import java.io.PrintWriter;
-
+import java.io.Serializable;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -13,25 +13,26 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
 
-public class TransactionManager
+public class TransactionManager implements Serializable
 {
-    public static final int MW_NUM = 0;
-    public static final int FLIGHT_NUM = 1;
-    public static final int CAR_NUM = 2;
-    public static final int ROOM_NUM = 3;
-    public static final int READ = 0;
-    public static final int WRITE = 1;
-    protected static LockManager mw_locks = new LockManager();
-    protected static int txn_counter = 0;
-    public static Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
+    public final int MW_NUM = 0;
+    public final int FLIGHT_NUM = 1;
+    public final int CAR_NUM = 2;
+    public final int ROOM_NUM = 3;
+    public final int READ = 0;
+    public final int WRITE = 1;
+    protected LockManager mw_locks = new LockManager();
+    protected int txn_counter = 0;
+    public Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
 
-    protected static ResourceManager rm_flight = null;
-    protected static ResourceManager rm_car = null;
-    protected static ResourceManager rm_room = null;
-    protected static MiddleWare mw = null;
+    protected ResourceManager rm_flight = null;
+    protected ResourceManager rm_car = null;
+    protected ResourceManager rm_room = null;
+    protected MiddleWare mw = null;
     protected int crash_mode = 0;
 
-    public TransactionManager() {}
+    public TransactionManager() {
+    }
 
     public TransactionManager(MiddleWare mw, ResourceManager rm_flight, ResourceManager rm_car, ResourceManager rm_room)
     {
@@ -41,7 +42,23 @@ public class TransactionManager
         this.rm_room = rm_room;
     }
 
-
+    public void setFlightRM(ResourceManager rm)
+    {
+        rm_flight = rm;
+    }
+    public void setCarRM(ResourceManager rm)
+    {
+        rm_car = rm;
+    }
+    public void setRoomRM(ResourceManager rm)
+    {
+        rm_room = rm;
+    }
+    public void setMW(MiddleWare mw)
+    {
+        this.mw = mw;
+    }
+    
     public int start() throws RemoteException {
         this.txn_counter ++;
         int id = this.txn_counter;
@@ -67,6 +84,7 @@ public class TransactionManager
             }
             else
             {
+                IOTools.saveToDisk(this, "TransactionManager.txt");
                 Trace.info("RM::Committing transaction : " + transactionId);
                 // check rm_list
                 try {
@@ -120,6 +138,7 @@ public class TransactionManager
                 }
                 mw_locks.UnlockAll(transactionId);     
                 this.active_txn.remove(transactionId);
+                IOTools.saveToDisk(this, "TransactionManager.txt");
             }
         }
         return true;

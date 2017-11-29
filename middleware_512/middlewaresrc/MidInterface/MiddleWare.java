@@ -158,4 +158,7 @@ the final destination */
 
     /* set crash mode */
     public void setCrashMode(String which, int mode) throws RemoteException;
+
+    /* build link from mw to restarted rm */
+    public void buildLink(String rm_name) throws RemoteException;
 }

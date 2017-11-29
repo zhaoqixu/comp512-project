@@ -111,9 +111,13 @@ public class TransactionManager
                             else if (rm_num == CAR_NUM) this.rm_car.abort(transactionId);
                             else this.rm_room.abort(transactionId);
                         }
+                        return false;
                     }
                 }
-                catch (Exception e) {}
+                catch (Exception e) {
+                    System.out.println("RM crashed : " + e.getMessage()); 
+                    return false;
+                }
                 mw_locks.UnlockAll(transactionId);     
                 this.active_txn.remove(transactionId);
             }

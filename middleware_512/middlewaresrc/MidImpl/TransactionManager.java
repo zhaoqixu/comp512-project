@@ -24,12 +24,14 @@ public class TransactionManager
     protected static LockManager mw_locks = new LockManager();
     protected static int txn_counter = 0;
     public static Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
-
+    public static Hashtable<Integer,LogFile> active_log = new Hashtable<Integer, LogFile>();
+    
     protected static ResourceManager rm_flight = null;
     protected static ResourceManager rm_car = null;
     protected static ResourceManager rm_room = null;
     protected static MiddleWare mw = null;
     protected int crash_mode = 0;
+    public String tm_name = "TM";
 
     public TransactionManager() {}
 
@@ -53,6 +55,8 @@ public class TransactionManager
             TimeThread tt = new TimeThread(this, id);
             tt.start();
             this.active_txn.put(id, txn);
+            LogFile log = new LogFile(id);
+            this.active_log.put(id, log);
         }
         return id;
     }
@@ -68,6 +72,10 @@ public class TransactionManager
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
+                
+                String record = "BEFORE_SENDING_REQUEST";
+                this.active_log.get(transactionId).record.add(record);
+                IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                 // check rm_list
                 try {
                         /*
@@ -87,23 +95,79 @@ public class TransactionManager
                     HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
                     for (int rm_num : rms)
                     {
-                        if (rm_num == MW_NUM) answers += this.mw.prepare(transactionId);
-                        else if (rm_num == FLIGHT_NUM) answers += this.rm_flight.prepare(transactionId);
-                        else if (rm_num == CAR_NUM) answers += this.rm_car.prepare(transactionId);
-                        else answers += this.rm_room.prepare(transactionId);
+                        if (rm_num == MW_NUM) {
+                            answers += this.mw.prepare(transactionId);
+                            // record = "CUSTOMERRM_REPLIED";
+                            // this.active_log.get(transactionId).record.add(record);
+                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        }
+                        else if (rm_num == FLIGHT_NUM) {
+                            answers += this.rm_flight.prepare(transactionId);
+                            // record = "FLIGHTRM_REPLIED";
+                            // this.active_log.get(transactionId).record.add(record);
+                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        }
+                        else if (rm_num == CAR_NUM) { 
+                            answers += this.rm_car.prepare(transactionId);
+                            // record = "CARRM_REPLIED";
+                            // this.active_log.get(transactionId).record.add(record);
+                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        }
+                        else {
+                            answers += this.rm_room.prepare(transactionId);
+                            // record = "ROOMRM_REPLIED";
+                            // this.active_log.get(transactionId).record.add(record);
+                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        }
                     }
+
+                    record = "AFTER_REPLIES_BEFORE_DECISION";
+                    this.active_log.get(transactionId).record.add(record);
+                    IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+
                     if (answers == rms.size())
                     {
+                        record = "BEFORE_COMMIT";
+                        this.active_log.get(transactionId).record.add(record);
+                        IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+
                         for (int rm_num : rms)
                         {
-                            if (rm_num == MW_NUM) this.mw.local_commit(transactionId);
-                            else if (rm_num == FLIGHT_NUM) this.rm_flight.commit(transactionId);
-                            else if (rm_num == CAR_NUM) this.rm_car.commit(transactionId);
-                            else this.rm_room.commit(transactionId);
+                            if (rm_num == MW_NUM) {
+                                this.mw.local_commit(transactionId);
+                                // record = "CUSTOMERRM_COMMITTED";
+                                // this.active_log.get(transactionId).record.add(record);
+                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            }
+                            else if (rm_num == FLIGHT_NUM) {
+                                this.rm_flight.commit(transactionId);
+                                // record = "FLIGHTRM_COMMITTED";
+                                // this.active_log.get(transactionId).record.add(record);
+                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            }
+                            else if (rm_num == CAR_NUM) {
+                                this.rm_car.commit(transactionId);
+                                // record = "CARRM_COMMITTED";
+                                // this.active_log.get(transactionId).record.add(record);
+                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            }
+                            else {
+                                this.rm_room.commit(transactionId);
+                                // record = "ROOMRM_COMMITTED";
+                                // this.active_log.get(transactionId).record.add(record);
+                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            }
                         }
+                        record = "AFTER_COMMIT";
+                        this.active_log.get(transactionId).record.add(record);
+                        IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                     }
                     else
                     {
+                        record = "BEFORE_ABORT";
+                        this.active_log.get(transactionId).record.add(record);
+                        IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+
                         for (int rm_num : rms)
                         {
                             if (rm_num == MW_NUM) this.mw.local_abort(transactionId);
@@ -111,6 +175,9 @@ public class TransactionManager
                             else if (rm_num == CAR_NUM) this.rm_car.abort(transactionId);
                             else this.rm_room.abort(transactionId);
                         }
+                        record = "AFTER_ABORT";
+                        this.active_log.get(transactionId).record.add(record);
+                        IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         return false;
                     }
                 }
@@ -120,6 +187,8 @@ public class TransactionManager
                 }
                 mw_locks.UnlockAll(transactionId);     
                 this.active_txn.remove(transactionId);
+                IOTools.deleteFile(tm_name + Integer.toString(transactionId) + ".log");
+                this.active_log.remove(transactionId);
             }
         }
         return true;

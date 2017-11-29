@@ -25,6 +25,7 @@ public class TransactionManager implements Serializable
     protected int txn_counter = 0;
     public Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
     public  Hashtable<Integer,LogFile> active_log = new Hashtable<Integer, LogFile>();
+    public Hashtable<Integer, Boolean> all_vote_yes = new Hashtable<Integer, Boolean>();
 
     protected ResourceManager rm_flight = null;
     protected ResourceManager rm_car = null;
@@ -74,6 +75,7 @@ public class TransactionManager implements Serializable
             this.active_txn.put(id, txn);
             LogFile log = new LogFile(id);
             this.active_log.put(id, log);
+            this.all_vote_yes.put(id, false);
         }
         return id;
     }
@@ -145,6 +147,7 @@ public class TransactionManager implements Serializable
 
                     if (answers == rms.size())
                     {
+                        this.all_vote_yes.put(transactionId, true);
                         record = "BEFORE_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");

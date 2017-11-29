@@ -1133,4 +1133,8 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             e.printStackTrace();
         }
     }
+
+    public boolean get_votes_result(int transactionId) throws RemoteException {
+        return this.txn_manager.all_vote_yes.get(transactionId);
+    }
 }

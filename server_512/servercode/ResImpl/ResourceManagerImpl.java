@@ -8,6 +8,7 @@ import ResInterface.*;
 
 import java.util.*;
 
+import MidImpl.LogFile;
 import MidInterface.MiddleWare;
 import ResImpl.IOTools;
 import ResImpl.CrashException;
@@ -92,6 +93,7 @@ public class ResourceManagerImpl implements ResourceManager
             if (mw != null){
                 mw.buildLink(rm_name);
                 // TODO: recovery
+                obj.recoverResourceManagerStatus();
             }
             System.err.println(rm_name +" server ready");
         } catch (Exception e) {
@@ -964,5 +966,86 @@ public class ResourceManagerImpl implements ResourceManager
     public void setCrashMode(int mode)
     {
         crash_mode = mode;
+    }
+
+    public int getTransactionId(String filename) {
+        return filename.charAt(filename.length()-5) - '0';
+    }
+    
+    public void recoverResourceManagerStatus() throws InvalidTransactionException{
+        File folder = new File("/servercode");
+        for (File f: folder.listFiles()) {
+            try {
+                String filename = f.getName();
+                    if (null != filename) {
+                    if (this.rm_name.equals("CarRM") && filename.startsWith("Car") && filename.endsWith(".log")) {
+                        int transactionId = getTransactionId(filename);
+                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                            Trace.warn("RM::Commit failed--Invalid transactionId");
+                            throw new InvalidTransactionException(transactionId);
+                        }
+                        else
+                        {
+                            LogFile log = (LogFile) IOTools.loadFromDisk(filename);
+                            this.active_log.put(transactionId, log);
+                            if (log.record.size() == 4) {
+                                //Do nothing   
+                            } else if (log.record.size() == 3 || log.record.size() == 2) {
+                                if (mw.get_votes_result(transactionId) == true) {
+                                    this.commit(transactionId);
+                                } else this.abort(transactionId);
+                            } else if (log.record.size() == 1 || log.record.size() == 0) {
+                                this.abort(transactionId);
+                            }
+                        }
+                    }
+                    if (this.rm_name.equals("FlightRM") && filename.startsWith("Flight") && filename.endsWith(".log")) {
+                        int transactionId = getTransactionId(filename);
+                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                            Trace.warn("RM::Commit failed--Invalid transactionId");
+                            throw new InvalidTransactionException(transactionId);
+                        }
+                        else
+                        {   
+                            LogFile log = (LogFile) IOTools.loadFromDisk(filename);
+                            this.active_log.put(transactionId, log);
+                            if (log.record.size() == 4) {
+                                //Do nothing   
+                            } else if (log.record.size() == 3 || log.record.size() == 2) {
+                                if (mw.get_votes_result(transactionId) == true) {
+                                    this.commit(transactionId);
+                                } else this.abort(transactionId);
+                            } else if (log.record.size() == 1 || log.record.size() == 0) {
+                                this.abort(transactionId);
+                            }
+                        }
+                    }
+                    if (this.rm_name.equals("RoomRM") && filename.startsWith("Room") && filename.endsWith(".log")) {
+                        int transactionId = getTransactionId(filename);
+                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                            Trace.warn("RM::Commit failed--Invalid transactionId");
+                            throw new InvalidTransactionException(transactionId);
+                        }
+                        else
+                        {   
+                            LogFile log = (LogFile) IOTools.loadFromDisk(filename);
+                            this.active_log.put(transactionId, log);
+                            if (log.record.size() == 4) {
+                                //Do nothing   
+                            } else if (log.record.size() == 3 || log.record.size() == 2) {
+                                if (mw.get_votes_result(transactionId) == true) {
+                                    this.commit(transactionId);
+                                } else this.abort(transactionId);
+                            } else if (log.record.size() == 1 || log.record.size() == 0) {
+                                this.abort(transactionId);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                System.out.println(e.getMessage()); 
+            }
+        }
     }
 }

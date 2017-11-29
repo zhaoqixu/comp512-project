@@ -28,7 +28,7 @@ public class ResourceManagerImpl implements ResourceManager
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
     protected static String ws_fname = "";
-    protected int crash = 0;
+    protected int crash_mode = 0;
     
     public static void main(String args[]) {
         // Figure out where server is running
@@ -914,5 +914,10 @@ public class ResourceManagerImpl implements ResourceManager
         int count = Integer.parseInt(scount);
         int old_price = Integer.parseInt(sold_price);
         return addCars(id, location, count, old_price, true);
+    }
+
+    public void setCrashMode(int mode)
+    {
+        crash_mode = mode;
     }
 }

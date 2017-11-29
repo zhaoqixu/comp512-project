@@ -155,4 +155,7 @@ the final destination */
 
     /* prepare in 2PC*/
     public int prepare(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+
+    /* set crash mode */
+    public void setCrashMode(String which, int mode) throws RemoteException;
 }

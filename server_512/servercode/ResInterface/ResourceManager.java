@@ -179,4 +179,7 @@ public interface ResourceManager extends Remote, Serializable
 
     /* prepare in 2PC*/
     public int prepare(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+
+    /* set crash mode */
+    public void setCrashMode(int mode) throws RemoteException;
 }

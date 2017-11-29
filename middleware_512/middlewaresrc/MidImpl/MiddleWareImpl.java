@@ -33,7 +33,7 @@ public class MiddleWareImpl implements MiddleWare
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
     protected static String ws_fname = "";
-    protected int crash = 0;
+    protected int crash_mode = 0;
 
     public static void main(String args[]) {
         // Figure out where server is running
@@ -1041,6 +1041,30 @@ public class MiddleWareImpl implements MiddleWare
         else {
             Trace.warn("MW::Shutdown failed");
             return false;
+        }
+    }
+
+    public void setCrashMode(String which, int mode) throws RemoteException
+    {
+        if (mode < 0 || mode > 10) return;
+        switch (which.charAt(0)) {
+            case 'c':
+                rm_car.setCrashMode(mode);
+                break;
+            case 'f':
+                rm_flight.setCrashMode(mode);
+                break;
+            case 'r':
+                rm_room.setCrashMode(mode);
+                break;
+            case 't':
+                txn_manager.setCrashMode(mode);
+                break;
+            case 'm':
+                crash_mode = mode;
+                break;
+            default:
+                break;  
         }
     }
 }

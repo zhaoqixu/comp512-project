@@ -33,8 +33,9 @@ public class client
         HashSet<Integer> cmd_no_xid = new HashSet<Integer>();
         cmd_no_xid.add(1);
         cmd_no_xid.add(21);
-        cmd_no_xid.add(23);  
-        cmd_no_xid.add(26);  
+        cmd_no_xid.add(23);
+        cmd_no_xid.add(26);
+        cmd_no_xid.add(27);
 
         String server = "localhost";
         int port = 1099;
@@ -848,6 +849,25 @@ public class client
             e.printStackTrace();
             }
             break;
+        
+        case 27: //crash a server, mw or tm with given case
+            if(arguments.size()!=3){
+                obj.wrongNumber();
+                break;
+            }
+            try {
+            String which = obj.getString(arguments.elementAt(1));
+            int mode = obj.getInt(arguments.elementAt(2));
+            System.out.println("Setting crashing mode " + mode + " to " + which);
+            mw.setCrashMode(which,mode);
+            System.out.println("Crash mode set");
+            }
+            catch(Exception e){
+            System.out.println("EXCEPTION:");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            }
+            break;
 
         default:
             System.out.println("The interface does not support this command.");
@@ -923,6 +943,8 @@ public class client
         return 25;
     else if (argument.compareToIgnoreCase("shutdown")==0)
         return 26;
+    else if (argument.compareToIgnoreCase("crash")==0)
+        return 27;
     else
         return 666;
 

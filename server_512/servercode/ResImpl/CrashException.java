@@ -1,16 +1,10 @@
 package ResImpl;
 
 public class CrashException extends Exception {
-    private int flag = 0;
-    
-    public CrashException (int flag)
+
+    public CrashException ()
     {
-        super("Crashed with flag : " + flag);
-        this.flag = flag;
+        super();
     }
-    
-    int getFlag()
-    {
-        return flag;
-    }
+
 }

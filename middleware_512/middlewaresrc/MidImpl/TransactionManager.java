@@ -29,6 +29,7 @@ public class TransactionManager
     protected static ResourceManager rm_car = null;
     protected static ResourceManager rm_room = null;
     protected static MiddleWare mw = null;
+    protected int crash_mode = 0;
 
     public TransactionManager() {}
 
@@ -240,6 +241,11 @@ public class TransactionManager
             }
             catch (Exception e) {}
         }
+    }
+
+    public void setCrashMode(int mode)
+    {
+        crash_mode = mode;
     }
 }
 

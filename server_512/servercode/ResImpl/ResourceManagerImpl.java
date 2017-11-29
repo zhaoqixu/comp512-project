@@ -702,12 +702,10 @@ public class ResourceManagerImpl implements ResourceManager
         String record = "BEFORE_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
-        if (crash_mode == 1) return (selfDestruct(crash_mode)) ? 1 : 0;
         IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
         record = "AFTER_YES";
         this.active_log.get(transactionId).record.add(record);
-        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
-        if (crash_mode == 2) return (selfDestruct(crash_mode)) ? 1 : 0;
+        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");        
         return 1;
     }
 
@@ -721,20 +719,23 @@ public class ResourceManagerImpl implements ResourceManager
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
+                
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
-                IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_"+ Integer.toString(transactionId) + ".log");
-                if (crash_mode == 3) return selfDestruct(crash_mode);
+                IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+
                 record = "AFTER_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
-                IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");                
+                IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+                
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
-                IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                IOTools.deleteFile(rm_name + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
             }
         }
@@ -756,8 +757,8 @@ public class ResourceManagerImpl implements ResourceManager
         if (history == null) return;
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
-        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_"+ Integer.toString(transactionId) + ".log");
-        if (crash_mode == 3) selfDestruct(crash_mode);       
+        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+        
         while (!history.empty())
         {
             Vector<String> v = history.pop();
@@ -811,9 +812,10 @@ public class ResourceManagerImpl implements ResourceManager
         }
         record = "AFTER_ABORT";
         this.active_log.get(transactionId).record.add(record);
-        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_"+ Integer.toString(transactionId) + ".log");        
+        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+        
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
-        IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+        IOTools.deleteFile(rm_name + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
     }
 
@@ -962,24 +964,5 @@ public class ResourceManagerImpl implements ResourceManager
     public void setCrashMode(int mode)
     {
         crash_mode = mode;
-    }
-
-    private boolean selfDestruct(int mode)
-    {
-        new Thread() {
-            @Override
-            public void run() {
-              System.out.println("Self Destructing ...");
-            //   try {
-            //     // sleep(1000);
-            //   } catch (InterruptedException e) {
-            //     // I don't care
-            //   }
-              System.out.println("done");
-              System.exit(mode);
-            }
-        
-          }.start();
-          return false;
     }
 }

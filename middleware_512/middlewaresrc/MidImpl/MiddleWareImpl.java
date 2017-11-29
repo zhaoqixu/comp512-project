@@ -38,13 +38,10 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     // protected static String shadow_tm_fname = "";
     protected static String ws_fname = "";
     protected int crash_mode = 0;
-<<<<<<< HEAD
     protected static String server_flight = "localhost";
     protected static String server_car = "localhost";
     protected static String server_room = "localhost";
-=======
     public String customerRM = "CustomerRM";
->>>>>>> 0720c49aa2c916de8c9ecd826e66210898f0f53b
 
     protected static int port_local = 1088;
     protected static int port = 2199;

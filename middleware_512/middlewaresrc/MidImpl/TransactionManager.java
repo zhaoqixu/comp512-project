@@ -15,7 +15,6 @@ import java.rmi.RMISecurityManager;
 
 public class TransactionManager implements Serializable
 {
-<<<<<<< HEAD
     public final int MW_NUM = 0;
     public final int FLIGHT_NUM = 1;
     public final int CAR_NUM = 2;
@@ -25,28 +24,12 @@ public class TransactionManager implements Serializable
     protected LockManager mw_locks = new LockManager();
     protected int txn_counter = 0;
     public Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
+    public  Hashtable<Integer,LogFile> active_log = new Hashtable<Integer, LogFile>();
 
     protected ResourceManager rm_flight = null;
     protected ResourceManager rm_car = null;
     protected ResourceManager rm_room = null;
     protected MiddleWare mw = null;
-=======
-    public static final int MW_NUM = 0;
-    public static final int FLIGHT_NUM = 1;
-    public static final int CAR_NUM = 2;
-    public static final int ROOM_NUM = 3;
-    public static final int READ = 0;
-    public static final int WRITE = 1;
-    protected static LockManager mw_locks = new LockManager();
-    protected static int txn_counter = 0;
-    public static Hashtable<Integer,Transaction> active_txn = new Hashtable<Integer, Transaction>();
-    public static Hashtable<Integer,LogFile> active_log = new Hashtable<Integer, LogFile>();
-    
-    protected static ResourceManager rm_flight = null;
-    protected static ResourceManager rm_car = null;
-    protected static ResourceManager rm_room = null;
-    protected static MiddleWare mw = null;
->>>>>>> 0720c49aa2c916de8c9ecd826e66210898f0f53b
     protected int crash_mode = 0;
     public String tm_name = "TM";
 
@@ -222,12 +205,9 @@ public class TransactionManager implements Serializable
                 }
                 mw_locks.UnlockAll(transactionId);     
                 this.active_txn.remove(transactionId);
-<<<<<<< HEAD
                 IOTools.saveToDisk(this, "TransactionManager.txt");
-=======
                 IOTools.deleteFile(tm_name + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
->>>>>>> 0720c49aa2c916de8c9ecd826e66210898f0f53b
             }
         }
         return true;

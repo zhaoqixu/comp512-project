@@ -3,19 +3,19 @@ package MidImpl;
 import java.io.Serializable;
 
 public class MasterRecord implements Serializable {
-	private int activeDb = 0;
+	private int activeCopy = 0;
 	private int lastXid;
 
 	public int getCommittedIndex() {
-		return activeDb;
+		return activeCopy;
 	}
 	
 	public int getWorkingIndex() {
-		return 1 - activeDb;
+		return 1 - activeCopy;
 	}
 	
 	public void setCommittedIndex(int committedIndex) {
-		this.activeDb = committedIndex;
+		this.activeCopy = committedIndex;
 	}
 	
 	public int getLastXid() {
@@ -27,6 +27,6 @@ public class MasterRecord implements Serializable {
 	}
 	
 	public void swap() {
-		activeDb = 1 - activeDb;
+		activeCopy = 1 - activeCopy;
 	}
 }

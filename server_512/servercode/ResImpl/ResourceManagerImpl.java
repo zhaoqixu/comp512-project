@@ -9,6 +9,7 @@ import ResInterface.*;
 import java.util.*;
 
 import ResImpl.IOTools;
+import ResImpl.CrashException;
 import java.io.File;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -25,7 +26,7 @@ public class ResourceManagerImpl implements ResourceManager
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
     protected static String ws_fname = "";
-    
+    protected int crash = 0;
     
     public static void main(String args[]) {
         // Figure out where server is running

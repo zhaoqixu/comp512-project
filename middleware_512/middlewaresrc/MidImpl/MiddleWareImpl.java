@@ -5,6 +5,7 @@ import LockManager.*;
 
 
 import MidImpl.IOTools;
+import MidImpl.CrashException;
 import java.util.*;
 import java.io.File;
 import java.rmi.registry.Registry;
@@ -32,6 +33,7 @@ public class MiddleWareImpl implements MiddleWare
     protected static String mr_fname = "";
     protected static String shadow_fname = "";
     protected static String ws_fname = "";
+    protected int crash = 0;
 
     public static void main(String args[]) {
         // Figure out where server is running

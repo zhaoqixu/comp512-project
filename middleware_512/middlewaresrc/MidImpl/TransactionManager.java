@@ -262,20 +262,12 @@ public class TransactionManager implements Serializable
             else
             {
                 Trace.info("RM::Aborting transaction : " + transactionId);
-                mw_locks.UnlockAll(transactionId);                
+                mw_locks.UnlockAll(transactionId);
+                IOTools.saveToDisk(this, "TransactionManager.txt");                
                 try {
                     for (int rm_num : this.active_txn.get(transactionId).rm_list)
                     {
-                        if (rm_num == MW_NUM) {
-                            try {
-                                this.mw.local_abort(transactionId);
-                            }
-                            catch (Exception e)
-                            {
-                                System.out.println("Middleware Crashed");
-                            }
-                        }
-                        else if (rm_num == FLIGHT_NUM) 
+                        if (rm_num == FLIGHT_NUM) 
                         {
                             try {
                                 this.rm_flight.abort(transactionId);
@@ -295,7 +287,7 @@ public class TransactionManager implements Serializable
                                 System.out.println("Car RM Crashed");
                             }
                         }
-                        else
+                        else if(rm_num == ROOM_NUM)
                         {
                             try {
                                 this.rm_room.abort(transactionId);
@@ -306,9 +298,19 @@ public class TransactionManager implements Serializable
                             }
                         }
                     }
+                    if (this.active_txn.get(transactionId).rm_list.contains(MW_NUM)) {
+                        try {
+                            this.mw.local_abort(transactionId);
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("Middleware Crashed");
+                        }
+                    }  
                 }
                 catch (Exception e) {}
                 this.active_txn.remove(transactionId);
+                IOTools.saveToDisk(this, "TransactionManager.txt");                
             }
         }
     }

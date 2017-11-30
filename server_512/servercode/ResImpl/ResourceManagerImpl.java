@@ -1020,10 +1020,11 @@ public class ResourceManagerImpl implements ResourceManager
                             IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
                             IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
                             this.active_log.remove(transactionId);
+                            this.active_txn.remove(transactionId);                            
                             break;
                         }
 
-                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
                             throw new InvalidTransactionException(transactionId);
                         }
                         else
@@ -1035,7 +1036,11 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                this.abort(transactionId);
+                                IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);
                             }
                         }
                     }
@@ -1050,10 +1055,11 @@ public class ResourceManagerImpl implements ResourceManager
                             IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
                             IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
                             this.active_log.remove(transactionId);
+                            this.active_txn.remove(transactionId);                            
                             break;
-                        }
+                       }
 
-                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
                             throw new InvalidTransactionException(transactionId);
                         }
                         else
@@ -1065,7 +1071,11 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                this.abort(transactionId);
+                                IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);                                
                             }
                         }
                     }
@@ -1080,10 +1090,11 @@ public class ResourceManagerImpl implements ResourceManager
                             IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
                             IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
                             this.active_log.remove(transactionId);
+                            this.active_txn.remove(transactionId);                            
                             break;
                         }
 
-                        if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
                             throw new InvalidTransactionException(transactionId);
                         }
                         else
@@ -1095,7 +1106,11 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                this.abort(transactionId);
+                                IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);                                
                             }
                         }
                     }

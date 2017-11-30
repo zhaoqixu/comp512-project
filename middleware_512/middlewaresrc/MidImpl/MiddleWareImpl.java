@@ -118,6 +118,8 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
                 System.out.println("Transaction manager loaded.");
                 obj.txn_manager.setMW(obj);
+                // obj.recoverTransactionManagerStatus();                
+                obj.recoverCustomerRMStatus();
             }
             else {
                 obj.txn_manager = new TransactionManager(mw, rm_flight, rm_car, rm_room);
@@ -1136,5 +1138,76 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public boolean get_votes_result(int transactionId) throws RemoteException {
         return this.txn_manager.all_vote_yes.get(transactionId);
+    }
+
+    public void removeTransactionId(int transactionId) {
+        this.txn_manager.active_txn.remove(transactionId);
+    }
+
+    public int getTransactionId(String filename) {
+        return filename.charAt(filename.length()-5) - '0';
+    }
+
+    public void recoverTransactionManagerStatus() {
+        File folder = new File(".");
+        for (File f: folder.listFiles()) {
+            try{
+                String filename = f.getName();
+                if (null != filename) {
+
+                }  
+            } catch (Exception e) {
+                System.out.println(e.getMessage());                
+            }
+        }
+    }
+
+    public void recoverCustomerRMStatus() {
+        File folder = new File(".");
+        for (File f: folder.listFiles()) {
+            try {
+                String filename = f.getName();
+                if (null != filename) {
+                    if (filename.startsWith("Customer") && filename.endsWith(".log")) {
+                        int transactionId = getTransactionId(filename);
+                        File file = new File("TripMiddleWare_WS_" + transactionId + ".txt");
+                        if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("TripMiddleWare_WS_" + transactionId + ".txt");
+                        else this.active_txn = new Hashtable<Integer, Transaction>();
+                        LogFile log = (LogFile) IOTools.loadFromDisk(filename);
+                        this.active_log.put(transactionId, log);
+                        if (log.record.contains("BEFORE_ABORT") || log.record.contains("AFTER_ABORT")) {
+                            IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
+                            IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+                            this.active_log.remove(transactionId);
+                            this.active_txn.remove(transactionId);                            
+                            break;
+                        }
+
+                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
+                            throw new InvalidTransactionException(transactionId);
+                        }
+                        else
+                        {
+                            if (log.record.size() == 4) {
+                                //Do nothing   
+                            } else if (log.record.size() == 3 || log.record.size() == 2) {
+                                if (this.get_votes_result(transactionId) == true) {
+                                    this.recover_history(transactionId);
+                                } else this.commit_no_crash(transactionId);
+                            } else if (log.record.size() == 1 || log.record.size() == 0) {
+                                IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
+                                IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                this.removeTransactionId(transactionId);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                System.out.println(e.getMessage()); 
+            }
+        }
     }
 }

@@ -90,6 +90,7 @@ public class TransactionManager implements Serializable
             }
             else
             {
+                mw_locks.UnlockAll(transactionId);                
                 IOTools.saveToDisk(this, "TransactionManager.txt");
                 Trace.info("RM::Committing transaction : " + transactionId);
                 
@@ -148,6 +149,7 @@ public class TransactionManager implements Serializable
                     if (answers == rms.size())
                     {
                         this.all_vote_yes.put(transactionId, true);
+                        IOTools.saveToDisk(this, "TransactionManager.txt");                        
                         record = "BEFORE_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -241,7 +243,6 @@ public class TransactionManager implements Serializable
                     // System.out.println("RM crashed : " + e.getMessage()); 
                     return false;
                 }
-                mw_locks.UnlockAll(transactionId);     
                 this.active_txn.remove(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
                 IOTools.deleteFile(tm_name + Integer.toString(transactionId) + ".log");
@@ -261,6 +262,7 @@ public class TransactionManager implements Serializable
             else
             {
                 Trace.info("RM::Aborting transaction : " + transactionId);
+                mw_locks.UnlockAll(transactionId);                
                 try {
                     for (int rm_num : this.active_txn.get(transactionId).rm_list)
                     {
@@ -271,7 +273,6 @@ public class TransactionManager implements Serializable
                     }
                 }
                 catch (Exception e) {}
-                mw_locks.UnlockAll(transactionId);
                 this.active_txn.remove(transactionId);
             }
         }

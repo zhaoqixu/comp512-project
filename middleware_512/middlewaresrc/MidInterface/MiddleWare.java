@@ -161,6 +161,8 @@ the final destination */
 
     /* build link from mw to restarted rm */
     public void buildLink(String rm_name) throws RemoteException;
-    
+
     public boolean get_votes_result(int transactionId) throws RemoteException;
+
+    public void removeTransactionId(int transaction) throws RemoteException;
 }

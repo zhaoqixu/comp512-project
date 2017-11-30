@@ -310,7 +310,7 @@ public class TransactionManager implements Serializable
                 }
                 catch (Exception e) {}
                 this.active_txn.remove(transactionId);
-                IOTools.saveToDisk(this, "TransactionManager.txt");                
+                // IOTools.saveToDisk(this, "TransactionManager.txt");                
             }
         }
     }

@@ -118,7 +118,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
                 System.out.println("Transaction manager loaded.");
                 obj.txn_manager.setMW(obj);
-                // obj.recoverTransactionManagerStatus();                
+                obj.recoverTransactionManagerStatus();                
                 obj.recoverCustomerRMStatus();
             }
             else {
@@ -1186,8 +1186,49 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             try{
                 String filename = f.getName();
                 if (null != filename) {
+                    if (filename.startsWith("TM") && filename.endsWith(".log")){
+                        int transactionId = getTransactionId(filename);
+                        LogFile log = (LogFile) IOTools.loadFromDisk("TM_" + transactionId + ".log");
+                        this.active_log.put(transactionId, log);
 
-                }  
+                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.txn_manager.active_txn.size()!=0)) {
+                            throw new InvalidTransactionException(transactionId);
+                        } else {
+                            if (log.record.size() == 0 || log.record.size() == 1) {
+                                // crash mode 4
+                                abort(transactionId);
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);                                
+                            } else if (log.record.size() == 2) {
+                                // crash mode 5
+                                abort(transactionId);
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);                                
+                            } else if (log.record.size() == 3) {
+                                // crash mode 6
+                                abort(transactionId);
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 4) {
+                                // crash mode 7
+                                abort(transactionId);
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 5) {
+                                // crash mode 8
+                                abort(transactionId);
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 6) {
+                                // crash mode 9
+                                this.txn_manager.active_txn.remove(transactionId);
+                                IOTools.saveToDisk(this.txn_manager, "TransactionManager.txt");
+                                IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
+                                this.active_log.remove(transactionId);
+                            }
+                        }
+                    }
+                }
             } catch (Exception e) {
                 System.out.println(e.getMessage());                
             }

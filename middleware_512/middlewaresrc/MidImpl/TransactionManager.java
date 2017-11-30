@@ -266,10 +266,45 @@ public class TransactionManager implements Serializable
                 try {
                     for (int rm_num : this.active_txn.get(transactionId).rm_list)
                     {
-                        if (rm_num == MW_NUM) this.mw.local_abort(transactionId);
-                        else if (rm_num == FLIGHT_NUM) this.rm_flight.abort(transactionId);
-                        else if (rm_num == CAR_NUM) this.rm_car.abort(transactionId);
-                        else this.rm_room.abort(transactionId);
+                        if (rm_num == MW_NUM) {
+                            try {
+                                this.mw.local_abort(transactionId);
+                            }
+                            catch (Exception e)
+                            {
+                                System.out.println("Middleware Crashed");
+                            }
+                        }
+                        else if (rm_num == FLIGHT_NUM) 
+                        {
+                            try {
+                                this.rm_flight.abort(transactionId);
+                            }
+                            catch (Exception e)
+                            {
+                                System.out.println("Flight RM Crashed");
+                            }
+                        }
+                        else if (rm_num == CAR_NUM) 
+                        {
+                            try {
+                                this.rm_car.abort(transactionId);
+                            }
+                            catch (Exception e)
+                            {
+                                System.out.println("Car RM Crashed");
+                            }
+                        }
+                        else
+                        {
+                            try {
+                                this.rm_room.abort(transactionId);
+                            }
+                            catch (Exception e)
+                            {
+                                System.out.println("Room RM Crashed");
+                            }
+                        }
                     }
                 }
                 catch (Exception e) {}

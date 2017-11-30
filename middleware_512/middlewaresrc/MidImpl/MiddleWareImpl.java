@@ -1241,6 +1241,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 System.out.println(e.getMessage()); 
             }
         }
+    }
     public boolean recover_history(int transactionId) throws RemoteException
     {
         Stack<Vector> tmp = getHistory(transactionId);

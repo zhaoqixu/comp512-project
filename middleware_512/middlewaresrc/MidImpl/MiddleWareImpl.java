@@ -940,7 +940,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
-        if (crash_mode == 2) 
+        if (crash_mode == 2)
         {
             selfDestruct(crash_mode);
             return;

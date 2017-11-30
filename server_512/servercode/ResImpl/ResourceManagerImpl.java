@@ -756,6 +756,7 @@ public class ResourceManagerImpl implements ResourceManager
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
+        Trace.info("RM::Aborting transaction : " + transactionId);
         Stack<Vector> history = getHistory(transactionId);
         if (history == null) return;
         String record = "BEFORE_ABORT";

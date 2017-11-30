@@ -118,6 +118,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
                 System.out.println("Transaction manager loaded.");
                 obj.txn_manager.setMW(obj);
+                obj.txn_manager.setCrashMode(0);
                 obj.recoverTransactionManagerStatus();                
                 obj.recoverCustomerRMStatus();
             }
@@ -891,12 +892,12 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     {
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-                Trace.warn("RM::Commit failed--Invalid transactionId");
+                Trace.warn("CustomerRM::Commit failed--Invalid transactionId");
                 throw new InvalidTransactionException(transactionId);
             }
             else
             {
-                Trace.info("RM::Committing transaction : " + transactionId);
+                Trace.info("CustomerRM::Committing transaction : " + transactionId);
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");  
@@ -912,6 +913,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
                 IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");                
                 this.active_log.remove(transactionId);
                 if (crash_mode == 3) return selfDestruct(crash_mode);
             }
@@ -935,8 +937,17 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public void local_abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
+        Trace.info("CustomerRM::Aborting transaction : " + transactionId);        
         Stack<Vector> history = getHistory(transactionId);
-        if (history == null) return;
+        if (history == null) 
+        {
+            IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+            this.active_txn.remove(transactionId);
+            System.out.println("Deleteing CustomerRM log ... ");
+            IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+            this.active_log.remove(transactionId);
+            return;
+        }
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
@@ -947,6 +958,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         }
         while (!history.empty())
         {
+            System.out.println("history not empty, aborting ...");
             Vector<String> v = history.pop();
             if (v.get(0).equals("reservecar"))
             {
@@ -1048,7 +1060,8 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
         this.active_txn.remove(transactionId);
-        IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+        System.out.println("Deleteing CustomerRM log ... ");
+        IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
         if (crash_mode == 3) 
         {
@@ -1194,7 +1207,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                         LogFile log = (LogFile) IOTools.loadFromDisk("TM_" + transactionId + ".log");
                         this.active_log.put(transactionId, log);
 
-                        if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.txn_manager.active_txn.size()!=0)) {
+                        if (transactionId < 1 || (!this.txn_manager.active_txn.containsKey(transactionId)&&this.txn_manager.active_txn.size()!=0)) {
                             throw new InvalidTransactionException(transactionId);
                         } else {
                             if (log.record.size() == 0 || log.record.size() == 1) {
@@ -1219,7 +1232,11 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                 this.active_log.remove(transactionId);
                             } else if (log.record.size() == 5) {
                                 // crash mode 8
-                                abort(transactionId);
+                                if (log.record.contains("SOME_COMMITTED")) {
+                                    commit(transactionId);
+                                } else {
+                                    abort(transactionId);
+                                }
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
                                 this.active_log.remove(transactionId);
                             } else if (log.record.size() == 6) {
@@ -1359,12 +1376,12 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     {
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-                Trace.warn("RM::Commit failed--Invalid transactionId");
+                Trace.warn("CustomerRM::Commit failed--Invalid transactionId");
                 throw new InvalidTransactionException(transactionId);
             }
             else
             {
-                Trace.info("RM::Committing transaction : " + transactionId);
+                Trace.info("CustomerRM::Committing transaction : " + transactionId);
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
                 master.setLastXid(transactionId);
                 master.swap();
@@ -1372,7 +1389,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
-                IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
             }
         }

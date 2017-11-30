@@ -4,12 +4,14 @@ import MidInterface.*;
 import LockManager.*;
 
 import java.util.*;
+
 // import java.io.PrintWriter;
 import java.io.Serializable;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.rmi.ConnectException;
 import java.rmi.RMISecurityManager;
 
 
@@ -101,19 +103,6 @@ public class TransactionManager implements Serializable
                 if (crash_mode == 4) return selfDestruct(crash_mode);
                 // check rm_list
                 try {
-                        /*
-                        * for each rm in v:
-                        *   Thread.run {
-                        *     rm.prepare(xid)
-                        *     wait for response
-                        *   }
-                        * if all YES:
-                        *   commit
-                        *   send commit to v
-                        * else:
-                        *   abort
-                        *   send abort to v 
-                        */
                     int answers = 0;
                     HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
                     if (rms.contains(MW_NUM))
@@ -164,25 +153,70 @@ public class TransactionManager implements Serializable
                         for (int rm_num : rms)
                         {
                             if (rm_num == MW_NUM) {
-                                this.mw.local_commit(transactionId);
+                                try {
+                                    this.mw.local_commit(transactionId);
+                                } catch (Exception e) {
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Middleware Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
+                                }
                                 // record = "CUSTOMERRM_COMMITTED";
                                 // this.active_log.get(transactionId).record.add(record);
                                 // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else if (rm_num == FLIGHT_NUM) {
-                                this.rm_flight.commit(transactionId);
+                                try {
+                                    this.rm_flight.commit(transactionId);
+                                } catch (Exception e) {
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Flight RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
+                                }
+                            
                                 // record = "FLIGHTRM_COMMITTED";
                                 // this.active_log.get(transactionId).record.add(record);
                                 // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else if (rm_num == CAR_NUM) {
-                                this.rm_car.commit(transactionId);
+                                try{
+                                    this.rm_car.commit(transactionId);
+                                } catch (Exception e) {
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Car RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
+                                }
                                 // record = "CARRM_COMMITTED";
                                 // this.active_log.get(transactionId).record.add(record);
                                 // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else {
-                                this.rm_room.commit(transactionId);
+                                try {
+                                    this.rm_room.commit(transactionId);
+                                } catch (Exception e) {
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Room RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
+                                }
                                 // record = "ROOMRM_COMMITTED";
                                 // this.active_log.get(transactionId).record.add(record);
                                 // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -216,7 +250,14 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    System.out.println("Middleware Crashed");
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Middleware Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
                                 }
                             }
                             else if (rm_num == FLIGHT_NUM) 
@@ -226,7 +267,14 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    System.out.println("Flight RM Crashed");
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Flight RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
                                 }
                             }
                             else if (rm_num == CAR_NUM) 
@@ -236,7 +284,14 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    System.out.println("Car RM Crashed");
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Car RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
                                 }
                             }
                             else
@@ -246,7 +301,14 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    System.out.println("Room RM Crashed");
+                                    if (e instanceof ConnectException) 
+                                    {
+                                        System.out.println("Room RM Crashed");
+                                    }
+                                    if (e instanceof InvalidTransactionException)
+                                    {
+                                        System.out.println(e.getMessage());
+                                    }
                                 }
                             }
                             if (!this.active_log.get(transactionId).record.contains("SOME_ABORTED"))
@@ -261,6 +323,10 @@ public class TransactionManager implements Serializable
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         if (crash_mode == 9) return selfDestruct(crash_mode);
+                        this.active_txn.remove(transactionId);
+                        IOTools.saveToDisk(this, "TransactionManager.txt");
+                        IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        this.active_log.remove(transactionId);
                         return false;
                     }
                 }
@@ -270,7 +336,7 @@ public class TransactionManager implements Serializable
                 }
                 this.active_txn.remove(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
-                IOTools.deleteFile(tm_name + Integer.toString(transactionId) + ".log");
+                IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
             }
         }
@@ -299,7 +365,14 @@ public class TransactionManager implements Serializable
                             }
                             catch (Exception e)
                             {
-                                System.out.println("Flight RM Crashed");
+                                if (e instanceof ConnectException) 
+                                {
+                                    System.out.println("Flight RM Crashed");
+                                }
+                                if (e instanceof InvalidTransactionException)
+                                {
+                                    System.out.println(e.getMessage());
+                                }
                             }
                         }
                         else if (rm_num == CAR_NUM) 
@@ -309,7 +382,14 @@ public class TransactionManager implements Serializable
                             }
                             catch (Exception e)
                             {
-                                System.out.println("Car RM Crashed");
+                                if (e instanceof ConnectException) 
+                                {
+                                    System.out.println("Car RM Crashed");
+                                }
+                                if (e instanceof InvalidTransactionException)
+                                {
+                                    System.out.println(e.getMessage());
+                                }
                             }
                         }
                         else if(rm_num == ROOM_NUM)
@@ -319,7 +399,14 @@ public class TransactionManager implements Serializable
                             }
                             catch (Exception e)
                             {
-                                System.out.println("Room RM Crashed");
+                                if (e instanceof ConnectException) 
+                                {
+                                    System.out.println("Room RM Crashed");
+                                }
+                                if (e instanceof InvalidTransactionException)
+                                {
+                                    System.out.println(e.getMessage());
+                                }
                             }
                         }
                     }
@@ -329,7 +416,14 @@ public class TransactionManager implements Serializable
                         }
                         catch (Exception e)
                         {
-                            System.out.println("Middleware Crashed");
+                            if (e instanceof ConnectException) 
+                            {
+                                System.out.println("Middleware Crashed");
+                            }
+                            if (e instanceof InvalidTransactionException)
+                            {
+                                System.out.println(e.getMessage());
+                            }
                         }
                     }  
                 }

@@ -1000,9 +1000,9 @@ public class ResourceManagerImpl implements ResourceManager
 
     public int getTransactionId(String filename) {
         // return filename.charAt(filename.length()-5) - '0';
-        String[] tmp = filename.split("_");
-        String[] tmp_dot = tmp[1].split(".");
-        return Integer.parseInt(tmp_dot[0]);
+        String[] tmp = filename.replace('.','_').split("_");
+        // for (String s : tmp) System.out.println("zz : " + s);
+        return Integer.parseInt(tmp[1]);
     }
     
     public void recoverResourceManagerStatus() throws InvalidTransactionException{
@@ -1013,6 +1013,7 @@ public class ResourceManagerImpl implements ResourceManager
                 if (null != filename) {
                     if (this.rm_name.equals("CarRM") && filename.startsWith("Car") && filename.endsWith(".log")) {
                         int transactionId = getTransactionId(filename);
+                        // System.out.println(transactionId);                                
                         File file = new File("CarRM_WS_" + transactionId + ".txt");
                         if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("CarRM_WS_" + transactionId + ".txt");
                         else this.active_txn = new Hashtable<Integer, Transaction>();

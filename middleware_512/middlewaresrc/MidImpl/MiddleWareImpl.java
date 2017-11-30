@@ -1178,9 +1178,9 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public int getTransactionId(String filename) {
         // return filename.charAt(filename.length()-5) - '0';
-        String[] tmp = filename.split("_");
-        String[] tmp_dot = tmp[1].split(".");
-        return Integer.parseInt(tmp_dot[0]);
+        String[] tmp = filename.replace('.','_').split("_");
+        // for (String s : tmp) System.out.println("zz : " + s);
+        return Integer.parseInt(tmp[1]);
     }
 
     public void recoverTransactionManagerStatus() {

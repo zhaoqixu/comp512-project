@@ -1227,6 +1227,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
+                                txn_manager.abort(transactionId);
                                 IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
                                 IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
                                 this.active_log.remove(transactionId);

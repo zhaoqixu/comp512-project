@@ -77,6 +77,7 @@ public class TransactionManager implements Serializable
             this.active_log.put(id, log);
             this.all_vote_yes.put(id, false);
         }
+        IOTools.saveToDisk(this, "TransactionManager.txt");
         return id;
     }
 
@@ -114,15 +115,13 @@ public class TransactionManager implements Serializable
                         */
                     int answers = 0;
                     HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
+                    if (rms.contains(MW_NUM))
+                    {
+                        answers += this.mw.prepare(transactionId);
+                    }
                     for (int rm_num : rms)
                     {
-                        if (rm_num == MW_NUM) {
-                            answers += this.mw.prepare(transactionId);
-                            // record = "CUSTOMERRM_REPLIED";
-                            // this.active_log.get(transactionId).record.add(record);
-                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
-                        }
-                        else if (rm_num == FLIGHT_NUM) {
+                        if (rm_num == FLIGHT_NUM) {
                             answers += this.rm_flight.prepare(transactionId);
                             // record = "FLIGHTRM_REPLIED";
                             // this.active_log.get(transactionId).record.add(record);
@@ -134,7 +133,7 @@ public class TransactionManager implements Serializable
                             // this.active_log.get(transactionId).record.add(record);
                             // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         }
-                        else {
+                        else if (rm_num == ROOM_NUM) {
                             answers += this.rm_room.prepare(transactionId);
                             // record = "ROOMRM_REPLIED";
                             // this.active_log.get(transactionId).record.add(record);

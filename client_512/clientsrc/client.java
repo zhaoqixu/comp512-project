@@ -790,9 +790,10 @@ public class client
             }
             }
             catch(Exception e){
-            System.out.println("EXCEPTION:");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            // System.out.println("EXCEPTION:");
+            // System.out.println(e.getMessage());
+            // e.printStackTrace();
+            System.out.println("Commit failed, server crashed");
             }
             break;
 

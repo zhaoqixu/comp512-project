@@ -723,7 +723,6 @@ public class ResourceManagerImpl implements ResourceManager
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
-                
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -736,7 +735,6 @@ public class ResourceManagerImpl implements ResourceManager
                 record = "AFTER_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
-                
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
                 IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -822,8 +820,8 @@ public class ResourceManagerImpl implements ResourceManager
         record = "AFTER_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
-        
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+        this.active_txn.remove(transactionId);
         IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
         if (crash_mode == 3) 

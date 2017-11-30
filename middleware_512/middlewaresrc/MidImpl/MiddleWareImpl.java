@@ -870,6 +870,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String record = "BEFORE_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");
+        if (crash_mode == 1) return (selfDestruct(crash_mode)) ? 1 : 0;        
         IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
         record = "AFTER_YES";
         this.active_log.get(transactionId).record.add(record);
@@ -897,8 +898,8 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");  
+                if (crash_mode == 2) return selfDestruct(crash_mode);                
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
-                // IOTools.saveToDisk(this.txn_manager, shadow_tm_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
@@ -908,8 +909,9 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");                
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
-                IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
-                this.active_txn.remove(transactionId);
+                IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                this.active_log.remove(transactionId);
+                if (crash_mode == 3) return selfDestruct(crash_mode);
             }
         }
         return true;
@@ -936,6 +938,11 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
+        if (crash_mode == 2) 
+        {
+            selfDestruct(crash_mode);
+            return;
+        }
         while (!history.empty())
         {
             Vector<String> v = history.pop();
@@ -1038,8 +1045,14 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+        this.active_txn.remove(transactionId);
         IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
+        if (crash_mode == 3) 
+        {
+            selfDestruct(crash_mode);
+            return;
+        }
     }
 
     public boolean shutdown() throws RemoteException
@@ -1106,6 +1119,25 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         }
     }
 
+    private boolean selfDestruct(int mode)
+    {
+        new Thread() {
+            @Override
+            public void run() {
+                System.out.println("Self Destructing ...");
+            //   try {
+            //     // sleep(1000);
+            //   } catch (InterruptedException e) {
+            //     // I don't care
+            //   }
+                System.out.println("done");
+                System.exit(mode);
+            }
+        
+            }.start();
+            return false;
+    }
+
     public void buildLink(String rm_name) throws RemoteException
     {
         try {
@@ -1136,5 +1168,96 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public boolean get_votes_result(int transactionId) throws RemoteException {
         return this.txn_manager.all_vote_yes.get(transactionId);
+    }
+
+    public boolean recover_history(int transactionId) throws RemoteException
+    {
+        Stack<Vector> tmp = getHistory(transactionId);
+        if (tmp == null) return false;
+        Stack<Vector> history = new Stack<Vector>();
+        while (!tmp.empty())
+        {
+            history.push(tmp.pop());
+        }
+        while (!history.empty())
+        {
+            Vector<String> v = history.pop();
+            if (v.get(0).equals("reservecar"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                Customer cust = (Customer) readData( transactionId, Customer.getKey(customer));
+                cust.reserve(v.get(2), v.get(3),1);
+                writeData(transactionId, cust.getKey(), cust);
+            }
+            else if (v.get(0).equals("reserveroom"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                Customer cust = (Customer) readData( transactionId, Customer.getKey(customer));
+                cust.reserve(v.get(2), v.get(3),1);
+                writeData(transactionId, cust.getKey(), cust);
+            }
+            else if (v.get(0).equals("reserveflight"))
+            {
+                int customer = Integer.parseInt(v.get(1));
+                Customer cust = (Customer) readData( transactionId, Customer.getKey(customer));
+                cust.reserve(v.get(2), v.get(3),1);
+                writeData(transactionId, cust.getKey(), cust);
+            }
+            else if (v.get(0).equals("newcustomer"))
+            {
+                // removeData(transactionId, Customer.getKey(Integer.parseInt(v.get(1))));
+                Customer cust = new Customer(Integer.parseInt(v.get(1)));
+                writeData(transactionId, cust.getKey(), cust);                
+            }
+            else if (v.get(0).equals("deletecustomer"))
+            {
+                this.deleteCustomer(transactionId, Integer.parseInt(v.get(1)));
+                this.active_txn.get(transactionId).pop();
+            }
+            else if (v.get(0).equals("itinerary"))
+            {
+                int customerID = Integer.parseInt(v.get(1));
+                Customer cust = (Customer) readData( transactionId, Customer.getKey(customerID));
+                // String res_history = v.get(2);
+                String cust_history = v.get(3);
+                String[] cust_reserved = cust_history.split(";");
+                for (int i = 0; i < cust_reserved.length; i++)
+                {
+                    String[] tokens = cust_reserved[i].split(",");
+                    int count = Integer.parseInt(tokens[1]);
+                    String[] keys = tokens[0].split("-");
+                    cust.reserve(tokens[0], keys[1], count);
+                }
+                writeData(transactionId, cust.getKey(), cust);
+            }
+        }
+        try {
+            return commit_no_crash(transactionId);
+        }
+        catch (Exception e) {return false;}
+    }
+
+    public boolean commit_no_crash(int transactionId) throws RemoteException, InvalidTransactionException
+    {
+        synchronized(this.active_txn) {
+            if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                Trace.warn("RM::Commit failed--Invalid transactionId");
+                throw new InvalidTransactionException(transactionId);
+            }
+            else
+            {
+                Trace.info("RM::Committing transaction : " + transactionId);
+                IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                master.setLastXid(transactionId);
+                master.swap();
+                IOTools.saveToDisk(master, mr_fname);
+                
+                IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+                this.active_txn.remove(transactionId);
+                IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                this.active_log.remove(transactionId);
+            }
+        }
+        return true;
     }
 }

@@ -1137,7 +1137,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             }
         
             }.start();
-            return false;
+        return false;
     }
 
     public void buildLink(String rm_name) throws RemoteException
@@ -1177,7 +1177,10 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     }
 
     public int getTransactionId(String filename) {
-        return filename.charAt(filename.length()-5) - '0';
+        // return filename.charAt(filename.length()-5) - '0';
+        String[] tmp = filename.split("_");
+        String[] tmp_dot = tmp[1].split(".");
+        return Integer.parseInt(tmp_dot[0]);
     }
 
     public void recoverTransactionManagerStatus() {

@@ -98,6 +98,7 @@ public class TransactionManager implements Serializable
                 String record = "BEFORE_SENDING_REQUEST";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                if (crash_mode == 4) return selfDestruct(crash_mode);
                 // check rm_list
                 try {
                         /*
@@ -118,32 +119,38 @@ public class TransactionManager implements Serializable
                     if (rms.contains(MW_NUM))
                     {
                         answers += this.mw.prepare(transactionId);
+                        if (!this.active_log.get(transactionId).record.contains("SOME_REPLIED"))
+                        {
+                            record = "SOME_REPLIED";
+                            this.active_log.get(transactionId).record.add(record);
+                            IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            if (crash_mode == 5) return selfDestruct(crash_mode);
+                        }
                     }
                     for (int rm_num : rms)
                     {
                         if (rm_num == FLIGHT_NUM) {
                             answers += this.rm_flight.prepare(transactionId);
-                            // record = "FLIGHTRM_REPLIED";
-                            // this.active_log.get(transactionId).record.add(record);
-                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         }
                         else if (rm_num == CAR_NUM) { 
                             answers += this.rm_car.prepare(transactionId);
-                            // record = "CARRM_REPLIED";
-                            // this.active_log.get(transactionId).record.add(record);
-                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         }
                         else if (rm_num == ROOM_NUM) {
                             answers += this.rm_room.prepare(transactionId);
-                            // record = "ROOMRM_REPLIED";
-                            // this.active_log.get(transactionId).record.add(record);
-                            // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        }
+                        if (!this.active_log.get(transactionId).record.contains("SOME_REPLIED"))
+                        {
+                            record = "SOME_REPLIED";
+                            this.active_log.get(transactionId).record.add(record);
+                            IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            if (crash_mode == 5) return selfDestruct(crash_mode);
                         }
                     }
 
                     record = "AFTER_REPLIES_BEFORE_DECISION";
                     this.active_log.get(transactionId).record.add(record);
                     IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                    if (crash_mode == 6) return selfDestruct(crash_mode);
 
                     if (answers == rms.size())
                     {
@@ -152,6 +159,7 @@ public class TransactionManager implements Serializable
                         record = "BEFORE_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        if (crash_mode == 7) return selfDestruct(crash_mode);
 
                         for (int rm_num : rms)
                         {
@@ -179,16 +187,26 @@ public class TransactionManager implements Serializable
                                 // this.active_log.get(transactionId).record.add(record);
                                 // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
+                            if (!this.active_log.get(transactionId).record.contains("SOME_COMMITTED"))
+                            {
+                                record = "SOME_COMMITTED";
+                                this.active_log.get(transactionId).record.add(record);
+                                IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                                if (crash_mode == 8) return selfDestruct(crash_mode);
+                            }
+
                         }
                         record = "AFTER_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        if (crash_mode == 9) return selfDestruct(crash_mode);
                     }
                     else
                     {
                         record = "BEFORE_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        if (crash_mode == 7) return selfDestruct(crash_mode);
 
                         for (int rm_num : rms)
                         {
@@ -231,10 +249,18 @@ public class TransactionManager implements Serializable
                                     System.out.println("Room RM Crashed");
                                 }
                             }
+                            if (!this.active_log.get(transactionId).record.contains("SOME_ABORTED"))
+                            {
+                                record = "SOME_ABORTED";
+                                this.active_log.get(transactionId).record.add(record);
+                                IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                                if (crash_mode == 8) return selfDestruct(crash_mode);
+                            }
                         }
                         record = "AFTER_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        if (crash_mode == 9) return selfDestruct(crash_mode);
                         return false;
                     }
                 }
@@ -413,6 +439,25 @@ public class TransactionManager implements Serializable
     public void setCrashMode(int mode)
     {
         crash_mode = mode;
+    }
+
+    private boolean selfDestruct(int mode)
+    {
+        new Thread() {
+            @Override
+            public void run() {
+                System.out.println("Self Destructing ...");
+            //   try {
+            //     // sleep(1000);
+            //   } catch (InterruptedException e) {
+            //     // I don't care
+            //   }
+                System.out.println("done");
+                System.exit(mode);
+            }
+        
+            }.start();
+        return false;
     }
 }
 

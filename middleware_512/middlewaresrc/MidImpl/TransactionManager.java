@@ -191,10 +191,45 @@ public class TransactionManager implements Serializable
 
                         for (int rm_num : rms)
                         {
-                            if (rm_num == MW_NUM) this.mw.local_abort(transactionId);
-                            else if (rm_num == FLIGHT_NUM) this.rm_flight.abort(transactionId);
-                            else if (rm_num == CAR_NUM) this.rm_car.abort(transactionId);
-                            else this.rm_room.abort(transactionId);
+                            if (rm_num == MW_NUM) {
+                                try {
+                                    this.mw.local_abort(transactionId);
+                                }
+                                catch (Exception e)
+                                {
+                                    System.out.println("Middleware Crashed");
+                                }
+                            }
+                            else if (rm_num == FLIGHT_NUM) 
+                            {
+                                try {
+                                    this.rm_flight.abort(transactionId);
+                                }
+                                catch (Exception e)
+                                {
+                                    System.out.println("Flight RM Crashed");
+                                }
+                            }
+                            else if (rm_num == CAR_NUM) 
+                            {
+                                try {
+                                    this.rm_car.abort(transactionId);
+                                }
+                                catch (Exception e)
+                                {
+                                    System.out.println("Car RM Crashed");
+                                }
+                            }
+                            else
+                            {
+                                try {
+                                    this.rm_room.abort(transactionId);
+                                }
+                                catch (Exception e)
+                                {
+                                    System.out.println("Room RM Crashed");
+                                }
+                            }
                         }
                         record = "AFTER_ABORT";
                         this.active_log.get(transactionId).record.add(record);
@@ -203,7 +238,7 @@ public class TransactionManager implements Serializable
                     }
                 }
                 catch (Exception e) {
-                    System.out.println("RM crashed : " + e.getMessage()); 
+                    // System.out.println("RM crashed : " + e.getMessage()); 
                     return false;
                 }
                 mw_locks.UnlockAll(transactionId);     

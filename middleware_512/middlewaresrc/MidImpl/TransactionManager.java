@@ -80,6 +80,7 @@ public class TransactionManager implements Serializable
             this.all_vote_yes.put(id, false);
         }
         IOTools.saveToDisk(this, "TransactionManager.txt");
+        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
         return id;
     }
 
@@ -93,10 +94,13 @@ public class TransactionManager implements Serializable
             }
             else
             {
-                mw_locks.UnlockAll(transactionId);                
+                mw_locks.UnlockAll(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
-                Trace.info("RM::Committing transaction : " + transactionId);
+                IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                Trace.info("TM::Committing transaction : " + transactionId);
                 
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}        
                 String record = "BEFORE_SENDING_REQUEST";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -105,11 +109,13 @@ public class TransactionManager implements Serializable
                 try {
                     int answers = 0;
                     HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
+                    
                     if (rms.contains(MW_NUM))
                     {
                         answers += this.mw.prepare(transactionId);
                         if (!this.active_log.get(transactionId).record.contains("SOME_REPLIED"))
                         {
+                            java.lang.Thread.sleep(100);
                             record = "SOME_REPLIED";
                             this.active_log.get(transactionId).record.add(record);
                             IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -129,13 +135,14 @@ public class TransactionManager implements Serializable
                         }
                         if (!this.active_log.get(transactionId).record.contains("SOME_REPLIED"))
                         {
+                            java.lang.Thread.sleep(100);
                             record = "SOME_REPLIED";
                             this.active_log.get(transactionId).record.add(record);
                             IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             if (crash_mode == 5) return selfDestruct(crash_mode);
                         }
                     }
-
+                    java.lang.Thread.sleep(100);
                     record = "AFTER_REPLIES_BEFORE_DECISION";
                     this.active_log.get(transactionId).record.add(record);
                     IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -144,10 +151,16 @@ public class TransactionManager implements Serializable
                     if (answers == rms.size())
                     {
                         this.all_vote_yes.put(transactionId, true);
-                        IOTools.saveToDisk(this, "TransactionManager.txt");                        
+                        IOTools.saveToDisk(this, "TransactionManager.txt");
+                        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                        java.lang.Thread.sleep(100);
                         record = "BEFORE_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
+                        // if (this.active_log.get(transactionId) == null) System.out.println("RECORD NULL");
+                        // else System.out.println("RECORD NOT NULL");
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        // LogFile tmp = (LogFile) IOTools.loadFromDisk(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        // System.out.println("LogFile Size : " + tmp.record.size());
                         if (crash_mode == 7) return selfDestruct(crash_mode);
 
                         for (int rm_num : rms)
@@ -165,9 +178,6 @@ public class TransactionManager implements Serializable
                                         System.out.println(e.getMessage());
                                     }
                                 }
-                                // record = "CUSTOMERRM_COMMITTED";
-                                // this.active_log.get(transactionId).record.add(record);
-                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else if (rm_num == FLIGHT_NUM) {
                                 try {
@@ -182,10 +192,6 @@ public class TransactionManager implements Serializable
                                         System.out.println(e.getMessage());
                                     }
                                 }
-                            
-                                // record = "FLIGHTRM_COMMITTED";
-                                // this.active_log.get(transactionId).record.add(record);
-                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else if (rm_num == CAR_NUM) {
                                 try{
@@ -200,9 +206,6 @@ public class TransactionManager implements Serializable
                                         System.out.println(e.getMessage());
                                     }
                                 }
-                                // record = "CARRM_COMMITTED";
-                                // this.active_log.get(transactionId).record.add(record);
-                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             else {
                                 try {
@@ -217,12 +220,10 @@ public class TransactionManager implements Serializable
                                         System.out.println(e.getMessage());
                                     }
                                 }
-                                // record = "ROOMRM_COMMITTED";
-                                // this.active_log.get(transactionId).record.add(record);
-                                // IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                             }
                             if (!this.active_log.get(transactionId).record.contains("SOME_COMMITTED"))
                             {
+                                java.lang.Thread.sleep(100);
                                 record = "SOME_COMMITTED";
                                 this.active_log.get(transactionId).record.add(record);
                                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -230,13 +231,20 @@ public class TransactionManager implements Serializable
                             }
 
                         }
+                        java.lang.Thread.sleep(100);
                         record = "AFTER_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         if (crash_mode == 9) return selfDestruct(crash_mode);
+                        this.active_txn.remove(transactionId);
+                        IOTools.saveToDisk(this, "TransactionManager.txt");
+                        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                        IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        this.active_log.remove(transactionId);
                     }
                     else
                     {
+                        java.lang.Thread.sleep(100);
                         record = "BEFORE_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
@@ -313,18 +321,21 @@ public class TransactionManager implements Serializable
                             }
                             if (!this.active_log.get(transactionId).record.contains("SOME_ABORTED"))
                             {
+                                java.lang.Thread.sleep(100);
                                 record = "SOME_ABORTED";
                                 this.active_log.get(transactionId).record.add(record);
                                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                                 if (crash_mode == 8) return selfDestruct(crash_mode);
                             }
                         }
+                        java.lang.Thread.sleep(100);
                         record = "AFTER_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
                         if (crash_mode == 9) return selfDestruct(crash_mode);
                         this.active_txn.remove(transactionId);
                         IOTools.saveToDisk(this, "TransactionManager.txt");
+                        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
                         IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
                         this.active_log.remove(transactionId);
                         return false;
@@ -334,10 +345,11 @@ public class TransactionManager implements Serializable
                     // System.out.println("RM crashed : " + e.getMessage()); 
                     return false;
                 }
-                this.active_txn.remove(transactionId);
-                IOTools.saveToDisk(this, "TransactionManager.txt");
-                IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
-                this.active_log.remove(transactionId);
+                // this.active_txn.remove(transactionId);
+                // IOTools.saveToDisk(this, "TransactionManager.txt");
+                // IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                // IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                // this.active_log.remove(transactionId);
             }
         }
         return true;
@@ -347,14 +359,15 @@ public class TransactionManager implements Serializable
     {
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-                Trace.warn("RM::Abort failed--Invalid transactionId");
+                Trace.warn("TM::Abort failed--Invalid transactionId");
                 throw new InvalidTransactionException(transactionId);
             }
             else
             {
-                Trace.info("RM::Aborting transaction : " + transactionId);
+                Trace.info("TM::Aborting transaction : " + transactionId);
                 mw_locks.UnlockAll(transactionId);
-                IOTools.saveToDisk(this, "TransactionManager.txt");                
+                IOTools.saveToDisk(this, "TransactionManager.txt");
+                IOTools.saveToDisk(this.active_txn, "TMActive.txt");
                 try {
                     for (int rm_num : this.active_txn.get(transactionId).rm_list)
                     {
@@ -447,7 +460,8 @@ public class TransactionManager implements Serializable
     {
         synchronized(this.active_txn) {
             if (!this.active_txn.isEmpty()) {
-                Trace.warn("RM::Shutdown failed--transaction active");
+                Trace.warn("TM::Shutdown failed--transaction active");
+                // System.out.println(this.active_txn.size());
                 return false;
             }
         }
@@ -486,7 +500,7 @@ public class TransactionManager implements Serializable
             else return false;
         }
         catch (DeadlockException dle) {
-            Trace.warn("RM::Lock failed--Deadlock exist");
+            Trace.warn("TM::Lock failed--Deadlock exist");
             try {
                 abort(xid);
             }
@@ -494,7 +508,7 @@ public class TransactionManager implements Serializable
                 System.out.println(e.getMessage());
                 e.printStackTrace();
             }
-            Trace.warn("RM::Transaction ID aborted");
+            Trace.warn("TM::Transaction ID aborted");
             return false;
         }
     }

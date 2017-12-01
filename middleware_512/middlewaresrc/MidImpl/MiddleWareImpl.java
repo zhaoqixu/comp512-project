@@ -116,14 +116,20 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             File file = new File("TransactionManager.txt");
             if (file.exists()) {
                 obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
-                System.out.println("Transaction manager loaded.");
+                obj.txn_manager.active_txn = (Hashtable<Integer,Transaction>) IOTools.loadFromDisk("TMActive.txt");
+                System.out.println("Size of TM active transaction " + obj.txn_manager.active_txn.size());
+                System.out.println("Transaction manager loaded");
                 obj.txn_manager.setMW(obj);
                 obj.txn_manager.setCrashMode(0);
-                obj.recoverTransactionManagerStatus();                
+                System.out.println("Transaction manager initialized");
+                obj.recoverTransactionManagerStatus();
+                System.out.println("Transaction manager recovered");
                 obj.recoverCustomerRMStatus();
+                System.out.println("Customer data recovered");
             }
             else {
                 obj.txn_manager = new TransactionManager(mw, rm_flight, rm_car, rm_room);
+                System.out.println("Transaction manager initialized");                
             }
             System.err.println("MiddleWare Server ready");
         } catch (Exception e) {
@@ -180,7 +186,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         return rm_flight.addFlight(id,flightNum,flightSeats,flightPrice);
@@ -195,7 +201,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         return rm_flight.deleteFlight(id, flightNum);
@@ -211,7 +217,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         return rm_room.addRooms(id, location, count, price);
@@ -225,17 +231,10 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
-        // return rm_room.deleteRooms(id, location);
-        
-        if (rm_room.deleteRooms(id, location))
-        {
-            
-            return true;
-        }
-        else return false;
+        return rm_room.deleteRooms(id, location);
     }
 
     // Create a new car location or add cars to an existing location
@@ -247,7 +246,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         return rm_car.addCars(id, location, count, price);
@@ -262,7 +261,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         return rm_car.deleteCars(id, location);
@@ -281,7 +280,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_flight.queryFlight(id, flightNum);
@@ -313,7 +312,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_flight.queryFlightPrice(id, flightNum);
@@ -332,7 +331,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_room.queryRooms(id, location);
@@ -352,7 +351,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_room.queryRoomsPrice(id, location);
@@ -370,7 +369,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_car.queryCars(id, location);
@@ -389,7 +388,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
     	return rm_car.queryCarsPrice(id, location);
@@ -410,32 +409,32 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     {
         if (id == 0)
         {
-            Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+            Trace.info("MW::queryCustomerInfo(" + id + ", " + customerID + ") called" );
             Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
             if ( cust == null ) {
-                Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                Trace.warn("MW::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
                 return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
             } else {
                     String s = cust.printBill();
-                    Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                    Trace.info("MW::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
                     System.out.println( s );
                     return s;
             }
         }
-        Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+        Trace.info("MW::queryCustomerInfo(" + id + ", " + customerID + ") called" );
         String key = Customer.getKey(customerID);
         if (!txn_manager.requestLock(id, key, READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return "";
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         if ( cust == null ) {
-            Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            Trace.warn("MW::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
             return "";   // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
         } else {
                 String s = cust.printBill();
-                Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                Trace.info("MW::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
                 System.out.println( s );
                 return s;
         }
@@ -447,7 +446,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public int newCustomer(int id)
         throws RemoteException
     {
-        Trace.info("INFO: RM::newCustomer(" + id + ") called" );
+        Trace.info("INFO: MW::newCustomer(" + id + ") called" );
         // Generate a globally unique ID for the new customer
         int cid = Integer.parseInt( String.valueOf(id) +
                                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
@@ -455,11 +454,11 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         Customer cust = new Customer( cid );
         if (!txn_manager.requestLock(id, cust.getKey(), WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return -1;
         }
         writeData( id, cust.getKey(), cust );
-        Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
+        Trace.info("MW::newCustomer(" + cid + ") returns ID = " + cid );
         String command = "newcustomer";
         this.active_txn.get(id).addHistory(command, Integer.toString(cid));
         return cid;
@@ -469,22 +468,22 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean newCustomer(int id, int customerID )
         throws RemoteException
     {
-        Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
+        Trace.info("INFO: MW::newCustomer(" + id + ", " + customerID + ") called" );
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         if ( cust == null ) {
             cust = new Customer(customerID);
             writeData( id, cust.getKey(), cust );
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
+            Trace.info("INFO: MW::newCustomer(" + id + ", " + customerID + ") created a new customer" );
             String command = "newcustomer";
             this.active_txn.get(id).addHistory(command, Integer.toString(customerID));
             return true;
         } else {
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+            Trace.info("INFO: MW::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
             return false;
         } // else
     }
@@ -494,15 +493,15 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean deleteCustomer(int id, int customerID)
         throws RemoteException
     {
-        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
+        Trace.info("MW::deleteCustomer(" + id + ", " + customerID + ") called" );
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         if ( cust == null ) {
-            Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            Trace.warn("MW::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
             return false;
         } else {            
             // Increase the reserved numbers of all reservable items which the customer reserved. 
@@ -520,7 +519,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 reservedCount[i] = reserveditem[i].getCount();
                 if (!txn_manager.requestLock(id, reservedkey[i], WRITE))
                 {
-                    Trace.warn("RM::Lock failed--Can not acquire lock");
+                    Trace.warn("MW::Lock failed--Can not acquire lock");
                     return false;
                 }
             }
@@ -544,7 +543,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             }
             // remove the customer from the storage
             removeData(id, cust.getKey());
-            Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
+            Trace.info("MW::deleteCustomer(" + id + ", " + customerID + ") succeeded");
             return true;
         } // if
     }
@@ -574,17 +573,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean reserveCar(int id, int customerID, String location)
         throws RemoteException
     {
+        Trace.info("MW::reserveCar( " + id + ", customer=" + customerID + ", " +location+" ) called" );
         String s = "car-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         // String key = ("car-" + location).toLowerCase();
         if ( cust == null ) {
-            Trace.warn("RM::reserveCar( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+            Trace.warn("MW::reserveCar( " + id + ", " + customerID + ", " +location+")  failed--customer doesn't exist" );
             return false;
         } else {
             if (rm_car.reserveCar(id, customerID, location) == true){
@@ -594,7 +594,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, location);
                 return true;
             } else {
-                Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+                Trace.warn("MW::reserveCar( " + id + ", " + customerID + ", " + location+") failed" );
                 return false;
             }
         }
@@ -604,17 +604,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean reserveRoom(int id, int customerID, String location)
         throws RemoteException
     {
+        Trace.info("MW::reserveRoom( " + id + ", customer=" + customerID + ", " +location+" ) called" );
         String s = "room-" + location;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         // String key = ("room-" + location).toLowerCase();
         if ( cust == null ) {
-            Trace.warn("RM::reserveRoom( " + id + ", " + customerID + ", " + key + ", "+location+")  failed--customer doesn't exist" );
+            Trace.warn("MW::reserveRoom( " + id + ", " + customerID + ", " +location+")  failed--customer doesn't exist" );
             return false;
         } else {
             if(rm_room.reserveRoom(id, customerID, location) == true){
@@ -624,7 +625,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, location);
                 return true;
             } else {
-                Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed" );
+                Trace.warn("MW::reserveRoom( " + id + ", " + customerID + ", "  + location+") failed" );
                 return false;
             }
         }
@@ -633,18 +634,19 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
     {
+        Trace.info("MW::reserveFlight( " + id + ", customer=" + customerID + ", " +flightNum+" ) called" );        
         String s = "flight-" + flightNum;
         String key = s.toLowerCase();
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), WRITE) || !txn_manager.requestLock(id, key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         // String key = ("flight-" + flightNum).toLowerCase();
 
         if ( cust == null ) {
-            Trace.warn("RM::reserveFlight( " + id + ", " + customerID + ", " + key + ", "+String.valueOf(flightNum)+")  failed--customer doesn't exist" );
+            Trace.warn("MW::reserveFlight( " + id + ", " + customerID + ", " +String.valueOf(flightNum)+")  failed--customer doesn't exist" );
             return false;
         } else {
             if(rm_flight.reserveFlight(id, customerID, flightNum) == true){
@@ -654,7 +656,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 this.active_txn.get(id).addHistory(command, Integer.toString(customerID), key, Integer.toString(flightNum));
                 return true;
             } else {
-                Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + flightNum+") failed" );
+                Trace.warn("MW::reserveFlight( " + id + ", " + customerID + ", " + flightNum+") failed" );
                 return false;
             }
         }
@@ -663,15 +665,15 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public RMHashtable getCustomerReservations(int id, int customerID)
         throws RemoteException
     {
-        Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
+        Trace.info("MW::getCustomerReservations(" + id + ", " + customerID + ") called" );
         if (!txn_manager.requestLock(id, Customer.getKey(customerID), READ))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return null;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
         if ( cust == null ) {
-            Trace.warn("RM::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+            Trace.warn("MW::getCustomerReservations(" + id + ", " + customerID + ") failed--customer doesn't exist" );
             return null;
         } else {
             return cust.getReservations();
@@ -681,16 +683,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
         throws RemoteException
     {
+        Trace.info("MW::itinerary( ... ) called" );        
         if (flightNumbers.size()==0) {
             return false;
         }
         if (!txn_manager.requestLock(id, Customer.getKey(customer), WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         Customer cust = (Customer) readData( id, Customer.getKey(customer) );        
         if ( cust == null ) {
+            Trace.warn("MW::itinerary( ... )  failed--customer doesn't exist" );            
             return false;
         }
         // Hashtable<Integer,Integer> f_cnt = new Hashtable<Integer,Integer>();
@@ -733,13 +737,13 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         String car_key = ("car-" + location).toLowerCase();
         if (!txn_manager.requestLock(id, car_key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         String room_key = ("room-" + location).toLowerCase();
         if (!txn_manager.requestLock(id, room_key, WRITE))
         {
-            Trace.warn("RM::Lock failed--Can not acquire lock");
+            Trace.warn("MW::Lock failed--Can not acquire lock");
             return false;
         }
         boolean car_reserved = false;
@@ -751,7 +755,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             flight_key[i] = ("flight-" + flightNum).toLowerCase();
             if (!txn_manager.requestLock(id, flight_key[i], WRITE))
             {
-                Trace.warn("RM::Lock failed--Can not acquire lock");
+                Trace.warn("MW::Lock failed--Can not acquire lock");
                 return false;
             }
             flight_reserved[i] = false;
@@ -853,7 +857,9 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     }
 
     public int start() throws RemoteException {
-        return txn_manager.start();
+        int id = txn_manager.start();
+        Trace.info("MW::Transaction " + id + " started");
+        return id;
     }
     public int start(int transactionId) throws RemoteException
     {
@@ -863,33 +869,44 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         }
         LogFile log = new LogFile(transactionId);
         this.active_log.put(transactionId, log);
+        Trace.info("CustomerRM::Transaction " + transactionId + " started to log");
         return transactionId;
     }
 
 
     public int prepare(int transactionId)
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
-    {   
+    {
+        Trace.info("CustomerRM::Preparing " + transactionId);
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         String record = "BEFORE_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("CustomerRM::Transaction " + transactionId + " log updated with BEFORE_YES and saved to disk");                
         if (crash_mode == 1) return (selfDestruct(crash_mode)) ? 1 : 0;        
         IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
+        Trace.info("CustomerRM::Transaction " + transactionId + " working set saved to disk");
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         record = "AFTER_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("CustomerRM::Transaction " + transactionId + " log updated with AFTER_YES and saved to disk");
         return 1;
     }
 
     public boolean commit(int transactionId) 
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
-         return txn_manager.commit(transactionId);
+        Trace.info("MW::commit(" + transactionId + ") called");
+        return txn_manager.commit(transactionId);
     }
 
     public boolean local_commit(int transactionId)
         throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
+        Trace.info("CustomerRM::commit(" + transactionId + ") called");
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
                 Trace.warn("CustomerRM::Commit failed--Invalid transactionId");
@@ -898,23 +915,40 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             else
             {
                 Trace.info("CustomerRM::Committing transaction : " + transactionId);
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
-                IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");  
-                if (crash_mode == 2) return selfDestruct(crash_mode);                
+                IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
+                Trace.info("CustomerRM::Transaction " + transactionId + " log updated with BEFORE_COMMIT and saved to disk");
+                if (crash_mode == 2) return selfDestruct(crash_mode);
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                Trace.info("CustomerRM::Customer data saved to disk");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+                Trace.info("CustomerRM::Master Record saved to disk");
 
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}        
                 record = "AFTER_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");                
+                Trace.info("CustomerRM::Transaction " + transactionId + " log updated with AFTER_COMMIT and saved to disk");
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+                Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted from disk");
                 this.active_txn.remove(transactionId);
-                IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
-                IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");                
+                IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+                Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
                 this.active_log.remove(transactionId);
+                if (!this.txn_manager.active_log.get(transactionId).record.contains("SOME_COMMITTED"))
+                {
+                    try {java.lang.Thread.sleep(100);}
+                    catch(Exception e) {}  
+                    record = "SOME_COMMITTED";
+                    this.txn_manager.active_log.get(transactionId).record.add(record);
+                    IOTools.saveToDisk(this.txn_manager.active_log.get(transactionId), "TM_" + Integer.toString(transactionId) + ".log");
+                }
                 if (crash_mode == 3) return selfDestruct(crash_mode);
             }
         }
@@ -932,6 +966,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
+        Trace.info("MW::abort(" + transactionId + ") called");
         txn_manager.abort(transactionId);
     }
 
@@ -943,14 +978,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         {
             IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
             this.active_txn.remove(transactionId);
-            System.out.println("Deleteing CustomerRM log ... ");
+            Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted from disk");
             IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
             this.active_log.remove(transactionId);
+            Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
             return;
         }
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
+        Trace.info("CustomerRM::Transaction " + transactionId + " log updated with BEFORE_ABORT and saved to disk");
         if (crash_mode == 2)
         {
             selfDestruct(crash_mode);
@@ -958,7 +997,6 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         }
         while (!history.empty())
         {
-            System.out.println("history not empty, aborting ...");
             Vector<String> v = history.pop();
             if (v.get(0).equals("reservecar"))
             {
@@ -1055,14 +1093,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 writeData(transactionId, cust.getKey(), cust);
             }
         }
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         record = "AFTER_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_"+ Integer.toString(transactionId) + ".log");
+        Trace.info("CustomerRM::Transaction " + transactionId + " log updated with AFTER_ABORT and saved to disk");
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
         this.active_txn.remove(transactionId);
-        System.out.println("Deleteing CustomerRM log ... ");
+        Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted from disk");
         IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
+        Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
         if (crash_mode == 3) 
         {
             selfDestruct(crash_mode);
@@ -1112,7 +1154,12 @@ public class MiddleWareImpl implements MiddleWare, Serializable
 
     public void setCrashMode(String which, int mode) throws RemoteException
     {
-        if (mode < 0 || mode > 10) return;
+        Trace.info("MW::setCrashMode(" + which + ", " + mode + ") called");
+        if (mode < 0 || mode > 10) 
+        {
+            Trace.warn("MW::setCrashMode(" + which + ", " + mode + ") failed--invalid mode : " + mode);
+            return;
+        }
         switch (which.charAt(0)) {
             case 'c':
                 rm_car.setCrashMode(mode);
@@ -1130,6 +1177,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 crash_mode = mode;
                 break;
             default:
+                Trace.warn("MW::setCrashMode(" + which + ", " + mode + ") failed--invalid which : " + which);
                 break;  
         }
     }
@@ -1161,20 +1209,23 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 Registry registry_flight = LocateRegistry.getRegistry(server_flight, port);
                 this.rm_flight = (ResourceManager) registry_flight.lookup("FlightRM");
                 this.txn_manager.setFlightRM(this.rm_flight);
+                Trace.info("MW::FlightRM RMI link rebuilt");
             }
             else if (rm_name.equals("CarRM"))
             {
                 Registry registry_car = LocateRegistry.getRegistry(server_car, port);
                 this.rm_car = (ResourceManager) registry_car.lookup("CarRM");
                 this.txn_manager.setCarRM(this.rm_car);
+                Trace.info("MW::CarRM RMI link rebuilt");
             }
             else if (rm_name.equals("RoomRM"))
             {
                 Registry registry_room = LocateRegistry.getRegistry(server_room, port);
                 this.rm_room = (ResourceManager) registry_room.lookup("RoomRM");
                 this.txn_manager.setRoomRM(this.rm_room);
+                Trace.info("MW::RoomRM RMI link rebuilt");
             }
-            else System.out.println("buildLink failed with wrong inputs");
+            else Trace.warn("buildLink failed with wrong inputs");
         } catch (Exception e) {
             System.err.println("MiddleWare Server exception: " + e.toString());
             e.printStackTrace();
@@ -1197,6 +1248,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     }
 
     public void recoverTransactionManagerStatus() {
+        Trace.info("MW::Recovering Transaction Manager");
         File folder = new File(".");
         for (File f: folder.listFiles()) {
             try{
@@ -1204,8 +1256,12 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 if (null != filename) {
                     if (filename.startsWith("TM") && filename.endsWith(".log")){
                         int transactionId = getTransactionId(filename);
-                        LogFile log = (LogFile) IOTools.loadFromDisk("TM_" + transactionId + ".log");
-                        this.active_log.put(transactionId, log);
+                        System.out.println("ID : " + transactionId);
+                        System.out.println("filename : " + filename);
+                        LogFile log = (LogFile) IOTools.loadFromDisk(filename);
+                        if (null == log) System.out.println("LOG NULL");
+                        this.txn_manager.active_log.put(transactionId, log);
+                        Trace.info("MW::Transaction " + transactionId + " log loaded from disk");
 
                         if (transactionId < 1 || (!this.txn_manager.active_txn.containsKey(transactionId)&&this.txn_manager.active_txn.size()!=0)) {
                             throw new InvalidTransactionException(transactionId);
@@ -1214,48 +1270,59 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                 // crash mode 4
                                 abort(transactionId);
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);                                
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " aborted, log deleted from disk");
                             } else if (log.record.size() == 2) {
                                 // crash mode 5
                                 abort(transactionId);
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);                                
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " aborted, log deleted from disk");
                             } else if (log.record.size() == 3) {
                                 // crash mode 6
                                 abort(transactionId);
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " aborted, log deleted from disk");
                             } else if (log.record.size() == 4) {
                                 // crash mode 7
                                 abort(transactionId);
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " aborted, log deleted from disk");
                             } else if (log.record.size() == 5) {
                                 // crash mode 8
                                 if (log.record.contains("SOME_COMMITTED")) {
                                     commit(transactionId);
+                                    Trace.info("MW::Transaction " + transactionId + " commited");
                                 } else {
                                     abort(transactionId);
+                                    Trace.info("MW::Transaction " + transactionId + " aborted");
                                 }
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " log deleted from disk");
                             } else if (log.record.size() == 6) {
                                 // crash mode 9
                                 this.txn_manager.active_txn.remove(transactionId);
                                 IOTools.saveToDisk(this.txn_manager, "TransactionManager.txt");
+                                IOTools.saveToDisk(this.txn_manager.active_txn, "TMActive.txt");
+                                Trace.info("MW::Transaction Manager saved to disk");
                                 IOTools.deleteFile("TM" + "_" + Integer.toString(transactionId) + ".log");
-                                this.active_log.remove(transactionId);
+                                this.txn_manager.active_log.remove(transactionId);
+                                Trace.info("MW::Transaction " + transactionId + " log deleted from disk");
                             }
                         }
                     }
                 }
             } catch (Exception e) {
-                System.out.println(e.getMessage());                
+                System.out.println(e.getMessage());
             }
         }
     }
 
     public void recoverCustomerRMStatus() {
+        Trace.info("CustomerRM::Recovering Customer data");
         File folder = new File(".");
         for (File f: folder.listFiles()) {
             try {
@@ -1264,16 +1331,21 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                     if (filename.startsWith("Customer") && filename.endsWith(".log")) {
                         int transactionId = getTransactionId(filename);
                         File file = new File("TripMiddleWare_WS_" + transactionId + ".txt");
-                        if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("TripMiddleWare_WS_" + transactionId + ".txt");
-                        else this.active_txn = new Hashtable<Integer, Transaction>();
+                        if (file.exists()) {
+                            this.active_txn = (Hashtable) IOTools.loadFromDisk("TripMiddleWare_WS_" + transactionId + ".txt");
+                            Trace.info("CustomerRM::Transaction " + transactionId + " working set loaded from disk");
+                        } else this.active_txn = new Hashtable<Integer, Transaction>();
                         LogFile log = (LogFile) IOTools.loadFromDisk(filename);
                         this.active_log.put(transactionId, log);
+                        Trace.info("CustomerRM::Transaction " + transactionId + " log loaded from disk");
                         if (log.record.contains("BEFORE_ABORT") || log.record.contains("AFTER_ABORT")) {
                             IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
+                            Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted from disk");
                             IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
                             this.active_log.remove(transactionId);
-                            this.active_txn.remove(transactionId);                            
-                            break;
+                            this.active_txn.remove(transactionId); 
+                            continue;
                         }
 
                         if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
@@ -1287,13 +1359,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                 if (this.get_votes_result(transactionId) == true) {
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
+                                Trace.info("CustomerRM::Transaction " + transactionId + " history recovered from disk");
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
                                 txn_manager.abort(transactionId);
+                                Trace.info("CustomerRM::Transaction " + transactionId + " aborted");
                                 IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted from disk");
                                 IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
                                 this.active_log.remove(transactionId);
                                 this.active_txn.remove(transactionId);
                                 this.removeTransactionId(transactionId);
+                                Trace.info("CustomerRM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
                             }
                         }
                     }
@@ -1307,6 +1384,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
     
     public boolean recover_history(int transactionId) throws RemoteException
     {
+        Trace.info("CustomerRM::Recovering Transaction " + transactionId + " history");
         Stack<Vector> tmp = getHistory(transactionId);
         if (tmp == null) return false;
         Stack<Vector> history = new Stack<Vector>();
@@ -1383,14 +1461,18 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             {
                 Trace.info("CustomerRM::Committing transaction : " + transactionId);
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                Trace.info("CustomerRM::Customer data saved to disk");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+                Trace.info("CustomerRM::Master Record saved to disk");
                 
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
+                Trace.info("CustomerRM::Transaction " + transactionId + " working set deleted to disk");
                 IOTools.deleteFile("CustomerRM" + "_" + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
+                Trace.info("CustomerRM::Transaction " + transactionId + " log deleted to disk");
             }
         }
         return true;

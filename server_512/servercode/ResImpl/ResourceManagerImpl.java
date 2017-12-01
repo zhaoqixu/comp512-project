@@ -93,10 +93,12 @@ public class ResourceManagerImpl implements ResourceManager
 
             if (mw != null){
                 mw.buildLink(rm_name);
+                System.out.println("RMI link rebuilt to Middleware");
                 // TODO: recovery
                 obj.recoverResourceManagerStatus();
+                System.out.println(rm_name + " data recovered");
             }
-            System.err.println(rm_name +" server ready");
+            System.err.println(rm_name + " server ready");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
@@ -175,7 +177,7 @@ public class ResourceManagerImpl implements ResourceManager
         if ( curObj != null ) {
             value = curObj.getCount();
         } // else
-        Trace.info("RM::queryNum(" + id + ", " + key + ") returns count=" + value);
+        Trace.info("RM::queryNum(" + id + ", " + key + ") returns count = " + value);
         return value;
     }
     
@@ -187,7 +189,7 @@ public class ResourceManagerImpl implements ResourceManager
         if ( curObj != null ) {
             value = curObj.getPrice();
         } // else
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") returns cost=$" + value );
+        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") returns cost = $" + value );
         return value;        
     }
     
@@ -234,8 +236,8 @@ public class ResourceManagerImpl implements ResourceManager
             // doesn't exist...add it
             Flight newObj = new Flight( flightNum, flightSeats, flightPrice );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats=" +
-                    flightSeats + ", price=$" + flightPrice );
+            Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats = " +
+                    flightSeats + ", price = $" + flightPrice );
         } else {
             // add seats to existing flight and update the price...
             curObj.setCount( curObj.getCount() + flightSeats );
@@ -243,7 +245,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( flightPrice );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addFlight(" + id + ") modified existing flight " + flightNum + ", seats=" + curObj.getCount() + ", price=$" + flightPrice );
+            Trace.info("RM::addFlight(" + id + ") modified existing flight " + flightNum + ", seats = " + curObj.getCount() + ", price = $" + flightPrice );
         } // else
         String command = "newflight";
         this.active_txn.get(id).addHistory(command, Integer.toString(flightNum), Integer.toString(flightSeats), Integer.toString(old_price), Integer.toString(flightPrice));
@@ -259,8 +261,8 @@ public class ResourceManagerImpl implements ResourceManager
             // doesn't exist...add it
             Flight newObj = new Flight( flightNum, flightSeats, flightPrice );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats=" +
-                    flightSeats + ", price=$" + flightPrice );
+            Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats = " +
+                    flightSeats + ", price = $" + flightPrice );
         } else {
             // add seats to existing flight and update the price...
             curObj.setCount( curObj.getCount() + flightSeats );
@@ -268,7 +270,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( flightPrice );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addFlight(" + id + ") modified existing flight " + flightNum + ", seats=" + curObj.getCount() + ", price=$" + flightPrice );
+            Trace.info("RM::addFlight(" + id + ") modified existing flight " + flightNum + ", seats = " + curObj.getCount() + ", price = $" + flightPrice );
         } // else
         return(true);
     }
@@ -302,7 +304,7 @@ public class ResourceManagerImpl implements ResourceManager
             // doesn't exist...add it
             Hotel newObj = new Hotel( location, count, price );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count=" + count + ", price=$" + price );
+            Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count = " + count + ", price = $" + price );
         } else {
             // add count to existing object and update price...
             curObj.setCount( curObj.getCount() + count );
@@ -310,7 +312,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( price );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+            Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count = " + curObj.getCount() + ", price = $" + price );
         } // else
         String command = "newroom";
         this.active_txn.get(id).addHistory(command, location, Integer.toString(count), Integer.toString(old_price), Integer.toString(price));
@@ -326,7 +328,7 @@ public class ResourceManagerImpl implements ResourceManager
             // doesn't exist...add it
             Hotel newObj = new Hotel( location, count, price );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count=" + count + ", price=$" + price );
+            Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count = " + count + ", price = $" + price );
         } else {
             // add count to existing object and update price...
             curObj.setCount( curObj.getCount() + count );
@@ -334,7 +336,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( price );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+            Trace.info("RM::addRooms(" + id + ") modified existing location " + location + ", count = " + curObj.getCount() + ", price = $" + price );
         } // else        String command = "newroom";
         return(true);
     }   
@@ -366,7 +368,7 @@ public class ResourceManagerImpl implements ResourceManager
             // car location doesn't exist...add it
             Car newObj = new Car( location, count, price );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addCars(" + id + ") created new location " + location + ", count=" + count + ", price=$" + price );
+            Trace.info("RM::addCars(" + id + ") created new location " + location + ", count = " + count + ", price = $" + price );
         } else {
             // add count to existing car location and update price...
             curObj.setCount( curObj.getCount() + count );
@@ -374,7 +376,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( price );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+            Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count = " + curObj.getCount() + ", price = $" + price );
         } // else
         String command = "newcar";
         this.active_txn.get(id).addHistory(command, location, Integer.toString(count), Integer.toString(old_price), Integer.toString(price));
@@ -390,7 +392,7 @@ public class ResourceManagerImpl implements ResourceManager
             // car location doesn't exist...add it
             Car newObj = new Car( location, count, price );
             writeData( id, newObj.getKey(), newObj );
-            Trace.info("RM::addCars(" + id + ") created new location " + location + ", count=" + count + ", price=$" + price );
+            Trace.info("RM::addCars(" + id + ") created new location " + location + ", count = " + count + ", price = $" + price );
         } else {
             // add count to existing car location and update price...
             curObj.setCount( curObj.getCount() + count );
@@ -398,7 +400,7 @@ public class ResourceManagerImpl implements ResourceManager
                 curObj.setPrice( price );
             } // if
             writeData( id, curObj.getKey(), curObj );
-            Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
+            Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count = " + curObj.getCount() + ", price = $" + price );
         } // else
         return(true);
     }
@@ -697,24 +699,34 @@ public class ResourceManagerImpl implements ResourceManager
         }
         LogFile log = new LogFile(transactionId);
         this.active_log.put(transactionId, log);
+        Trace.info("RM::Transaction " + transactionId + " started to log");
         return transactionId;
     }
 
     public int prepare(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
-    {   
+    {
+        Trace.info("RM::Preparing " + transactionId);
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         String record = "BEFORE_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("RM::Transaction " + transactionId + " log updated with BEFORE_YES and saved to disk");
         if (crash_mode == 1) return (selfDestruct(crash_mode)) ? 1 : 0;
         IOTools.saveToDisk(active_txn, ws_fname + Integer.toString(transactionId) + ".txt");
+        Trace.info("RM::Transaction " + transactionId + " working set saved to disk");
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         record = "AFTER_YES";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");      
+        Trace.info("RM::Transaction " + transactionId + " log updated with AFTER_YES and saved to disk");
         return 1;
     }
 
     public boolean commit(int transactionId) throws RemoteException, TransactionAbortedException, InvalidTransactionException
     {
+        Trace.info("RM::commit(" + transactionId + ") called");
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
                 Trace.warn("RM::Commit failed--Invalid transactionId");
@@ -723,21 +735,31 @@ public class ResourceManagerImpl implements ResourceManager
             else
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}
                 String record = "BEFORE_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+                Trace.info("RM::Transaction " + transactionId + " log updated with BEFORE_COMMIT and saved to disk");
                 if (crash_mode == 2) return selfDestruct(crash_mode);
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                Trace.info("RM::data saved to disk");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+                Trace.info("RM::Master Record saved to disk");
 
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}
                 record = "AFTER_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+                Trace.info("RM::Transaction " + transactionId + " log updated with AFTER_COMMIT and saved to disk");
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                 this.active_txn.remove(transactionId);
                 IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+                Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
                 this.active_log.remove(transactionId);
                 if (crash_mode == 3) return selfDestruct(crash_mode);
             }
@@ -758,10 +780,22 @@ public class ResourceManagerImpl implements ResourceManager
     {
         Trace.info("RM::Aborting transaction : " + transactionId);
         Stack<Vector> history = getHistory(transactionId);
-        if (history == null) return;
+        if (history == null)
+        {
+            IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
+            this.active_txn.remove(transactionId);
+            Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
+            IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
+            this.active_log.remove(transactionId);
+            Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
+            return;
+        }
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         String record = "BEFORE_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("RM::Transaction " + transactionId + " log updated with BEFORE_ABORT and saved to disk");
         if (crash_mode == 2) 
         {
             selfDestruct(crash_mode);
@@ -818,13 +852,18 @@ public class ResourceManagerImpl implements ResourceManager
                 undoFreeItemRes(transactionId, customerID, reservedkey, reservedCount);
             }
         }
+        try {java.lang.Thread.sleep(100);}
+        catch(Exception e) {}
         record = "AFTER_ABORT";
         this.active_log.get(transactionId).record.add(record);
         IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("RM::Transaction " + transactionId + " log updated with AFTER_ABORT and saved to disk");
         IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
         this.active_txn.remove(transactionId);
+        Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
         IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
         this.active_log.remove(transactionId);
+        Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
         if (crash_mode == 3) 
         {
             selfDestruct(crash_mode);
@@ -950,6 +989,7 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean recoverFlight(int id, String sflightNum, String sflightSeats, String sold_flightPrice)
     throws RemoteException
     {
+        Trace.info("RM::recoverFlight(" + id + ", " + sflightNum + ", " + sflightSeats + ", " + sold_flightPrice + ") called");
         int flightNum = Integer.parseInt(sflightNum);
         int flightSeats = Integer.parseInt(sflightSeats);
         int old_flightPrice = Integer.parseInt(sold_flightPrice);
@@ -959,6 +999,7 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean recoverRooms(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        Trace.info("RM::recoverRooms(" + id + ", " + slocation + ", " + scount + ", " + sold_price + ") called");
         String location = slocation;
         int count = Integer.parseInt(scount);
         int old_price = Integer.parseInt(sold_price);
@@ -968,6 +1009,7 @@ public class ResourceManagerImpl implements ResourceManager
     public boolean recoverCars(int id, String slocation, String scount, String sold_price)
     throws RemoteException
     {
+        Trace.info("RM::recoverCars(" + id + ", " + slocation + ", " + scount + ", " + sold_price + ") called");
         String location = slocation;
         int count = Integer.parseInt(scount);
         int old_price = Integer.parseInt(sold_price);
@@ -976,6 +1018,7 @@ public class ResourceManagerImpl implements ResourceManager
 
     public void setCrashMode(int mode)
     {
+        Trace.info("RM::setCrashMode(" + mode + ") called");
         crash_mode = mode;
     }
 
@@ -1006,6 +1049,7 @@ public class ResourceManagerImpl implements ResourceManager
     }
     
     public void recoverResourceManagerStatus() throws InvalidTransactionException{
+        Trace.info("RM::Recovering server data");
         File folder = new File(".");
         for (File f: folder.listFiles()) {
             try {
@@ -1013,18 +1057,22 @@ public class ResourceManagerImpl implements ResourceManager
                 if (null != filename) {
                     if (this.rm_name.equals("CarRM") && filename.startsWith("Car") && filename.endsWith(".log")) {
                         int transactionId = getTransactionId(filename);
-                        // System.out.println(transactionId);                                
                         File file = new File("CarRM_WS_" + transactionId + ".txt");
-                        if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("CarRM_WS_" + transactionId + ".txt");
-                        else this.active_txn = new Hashtable<Integer, Transaction>();
+                        if (file.exists()) {
+                            this.active_txn = (Hashtable) IOTools.loadFromDisk("CarRM_WS_" + transactionId + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set loaded from disk");
+                        } else this.active_txn = new Hashtable<Integer, Transaction>();
                         LogFile log = (LogFile) IOTools.loadFromDisk(filename);
                         this.active_log.put(transactionId, log);
+                        Trace.info("RM::Transaction " + transactionId + " log loaded from disk");
                         if (log.record.contains("BEFORE_ABORT") || log.record.contains("AFTER_ABORT")) {
                             IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                             IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                             this.active_log.remove(transactionId);
                             this.active_txn.remove(transactionId);                            
-                            break;
+                            continue;
                         }
 
                         if (transactionId < 1 || (!this.active_txn.containsKey(transactionId)&&this.active_txn.size()!=0)) {
@@ -1038,25 +1086,34 @@ public class ResourceManagerImpl implements ResourceManager
                                 if (mw.get_votes_result(transactionId) == true) {
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
                                 IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                                 IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                                 this.active_log.remove(transactionId);
                                 this.active_txn.remove(transactionId);
                                 mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
                             }
                         }
                     }
                     if (this.rm_name.equals("FlightRM") && filename.startsWith("Flight") && filename.endsWith(".log")) {
                         int transactionId = getTransactionId(filename);
                         File file = new File("FlightRM_WS_" + transactionId + ".txt");
-                        if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("FlightRM_WS_" + transactionId + ".txt");
-                        else this.active_txn = new Hashtable<Integer, Transaction>();
+                        if (file.exists()) {
+                            this.active_txn = (Hashtable) IOTools.loadFromDisk("FlightRM_WS_" + transactionId + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set loaded from disk");
+                        } else this.active_txn = new Hashtable<Integer, Transaction>();
                         LogFile log = (LogFile) IOTools.loadFromDisk(filename);
                         this.active_log.put(transactionId, log);
+                        Trace.info("RM::Transaction " + transactionId + " log loaded from disk");
                         if (log.record.contains("BEFORE_ABORT") || log.record.contains("AFTER_ABORT")) {
                             IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                             IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                             this.active_log.remove(transactionId);
                             this.active_txn.remove(transactionId);                            
                             break;
@@ -1073,27 +1130,36 @@ public class ResourceManagerImpl implements ResourceManager
                                 if (mw.get_votes_result(transactionId) == true) {
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
                                 IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                                 IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                                 this.active_log.remove(transactionId);
                                 this.active_txn.remove(transactionId);
-                                mw.removeTransactionId(transactionId);                                
+                                mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
                             }
                         }
                     }
                     if (this.rm_name.equals("RoomRM") && filename.startsWith("Room") && filename.endsWith(".log")) {
                         int transactionId = getTransactionId(filename);
                         File file = new File("RoomRM_WS_" + transactionId + ".txt");
-                        if (file.exists()) this.active_txn = (Hashtable) IOTools.loadFromDisk("RoomRM_WS_" + transactionId + ".txt");
-                        else this.active_txn = new Hashtable<Integer, Transaction>();
+                        if (file.exists()) {
+                            this.active_txn = (Hashtable) IOTools.loadFromDisk("RoomRM_WS_" + transactionId + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set loaded from disk");
+                        } else this.active_txn = new Hashtable<Integer, Transaction>();
                         LogFile log = (LogFile) IOTools.loadFromDisk(filename);
                         this.active_log.put(transactionId, log);
+                        Trace.info("RM::Transaction " + transactionId + " log loaded from disk");
                         if (log.record.contains("BEFORE_ABORT") || log.record.contains("AFTER_ABORT")) {
                             IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
+                            Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                             IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                             this.active_log.remove(transactionId);
-                            this.active_txn.remove(transactionId);                            
+                            this.active_txn.remove(transactionId);
                             break;
                         }
 
@@ -1108,12 +1174,16 @@ public class ResourceManagerImpl implements ResourceManager
                                 if (mw.get_votes_result(transactionId) == true) {
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
                             } else if (log.record.size() == 1 || log.record.size() == 0) {
                                 IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                                 IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                                 this.active_log.remove(transactionId);
                                 this.active_txn.remove(transactionId);
-                                mw.removeTransactionId(transactionId);                                
+                                mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
                             }
                         }
                     }
@@ -1127,6 +1197,7 @@ public class ResourceManagerImpl implements ResourceManager
 
     public boolean recover_history(int transactionId) throws RemoteException
     {
+        Trace.info("RM::Recovering Transaction " + transactionId + " history");
         Stack<Vector> tmp = getHistory(transactionId);
         if (tmp == null) return false;
         Stack<Vector> history = new Stack<Vector>();
@@ -1211,14 +1282,18 @@ public class ResourceManagerImpl implements ResourceManager
             {
                 Trace.info("RM::Committing transaction : " + transactionId);
                 IOTools.saveToDisk(m_itemHT, shadow_fname + Integer.toString(master.getWorkingIndex()) + ".txt");
+                Trace.info("RM::Customer data saved to disk");
                 master.setLastXid(transactionId);
                 master.swap();
                 IOTools.saveToDisk(master, mr_fname);
+                Trace.info("RM::Master Record saved to disk");
                 
                 IOTools.deleteFile(ws_fname + Integer.toString(transactionId) + ".txt");
                 this.active_txn.remove(transactionId);
+                Trace.info("RM::Transaction " + transactionId + " working set deleted to disk");
                 IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
                 this.active_log.remove(transactionId);
+                Trace.info("RM::Transaction " + transactionId + " log deleted to disk");
             }
         }
         return true;

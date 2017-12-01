@@ -43,4 +43,5 @@ elif [ $1 = 'z' ]
 then
 	find . -name '*.txt' -delete
 	find . -name '*.log' -delete
+	find . -name '*.class' -delete
 fi

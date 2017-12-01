@@ -3,6 +3,7 @@ import MidImpl.TransactionAbortedException;
 import MidImpl.InvalidTransactionException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.ConnectException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -759,6 +760,12 @@ public class client
             System.out.println("Transaction ID granted :"+transactionId);
             }
             catch(Exception e){
+                if (e instanceof ConnectException) {
+                    System.out.println("Start failed, server crashed");
+                    System.out.println("Client restart required");
+                    System.out.println("Quitting client...");
+                    System.exit(1);
+                }
             System.out.println("EXCEPTION:");
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -793,7 +800,12 @@ public class client
             // System.out.println("EXCEPTION:");
             // System.out.println(e.getMessage());
             // e.printStackTrace();
-            System.out.println("Commit failed, server crashed");
+            if (e instanceof ConnectException) {
+                System.out.println("Commit failed, server crashed");
+                System.out.println("Client restart required");
+                System.out.println("Quitting client...");
+                System.exit(1);
+            }
             }
             break;
 
@@ -817,6 +829,12 @@ public class client
             }
             }
             catch(Exception e){
+                if (e instanceof ConnectException) {
+                    System.out.println("Abort failed, server crashed");
+                    System.out.println("Client restart required");
+                    System.out.println("Quitting client...");
+                    System.exit(1);
+                }
             System.out.println("EXCEPTION:");
             System.out.println(e.getMessage());
             e.printStackTrace();

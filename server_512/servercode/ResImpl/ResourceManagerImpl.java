@@ -699,6 +699,7 @@ public class ResourceManagerImpl implements ResourceManager
         }
         LogFile log = new LogFile(transactionId);
         this.active_log.put(transactionId, log);
+        IOTools.saveToDisk(this.active_log.get(transactionId), rm_name + "_" + Integer.toString(transactionId) + ".log");        
         Trace.info("RM::Transaction " + transactionId + " started to log");
         return transactionId;
     }
@@ -759,7 +760,7 @@ public class ResourceManagerImpl implements ResourceManager
                 Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
                 this.active_txn.remove(transactionId);
                 IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
-                Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
+                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
                 this.active_log.remove(transactionId);
                 if (crash_mode == 3) return selfDestruct(crash_mode);
             }
@@ -787,7 +788,7 @@ public class ResourceManagerImpl implements ResourceManager
             Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
             IOTools.deleteFile(rm_name + "_" + Integer.toString(transactionId) + ".log");
             this.active_log.remove(transactionId);
-            Trace.info("CustomerRM::Transaction " + transactionId + " log deleted from disk");
+            Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
             return;
         }
         try {java.lang.Thread.sleep(100);}

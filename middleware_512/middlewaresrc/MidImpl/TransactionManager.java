@@ -4,7 +4,7 @@ import MidInterface.*;
 import LockManager.*;
 
 import java.util.*;
-
+import java.io.File;
 // import java.io.PrintWriter;
 import java.io.Serializable;
 import java.rmi.registry.Registry;
@@ -77,10 +77,13 @@ public class TransactionManager implements Serializable
             this.active_txn.put(id, txn);
             LogFile log = new LogFile(id);
             this.active_log.put(id, log);
+            IOTools.saveToDisk(this.active_log.get(id), tm_name + "_" + Integer.toString(id) + ".log");
+            Trace.info("TM::Transaction " + id + " started to log");
             this.all_vote_yes.put(id, false);
+            IOTools.saveToDisk(this, "TransactionManager.txt");
+            IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+            Trace.info("TM::Transaction Manager saved to disk");
         }
-        IOTools.saveToDisk(this, "TransactionManager.txt");
-        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
         return id;
     }
 
@@ -89,7 +92,7 @@ public class TransactionManager implements Serializable
     {
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
-                Trace.warn("RM::Commit failed--Invalid transactionId");
+                Trace.warn("TM::Commit failed--Invalid transactionId");
                 throw new InvalidTransactionException(transactionId);
             }
             else
@@ -97,6 +100,7 @@ public class TransactionManager implements Serializable
                 mw_locks.UnlockAll(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
                 IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                Trace.info("TM::Transaction Manager saved to disk");
                 Trace.info("TM::Committing transaction : " + transactionId);
                 
                 try {java.lang.Thread.sleep(100);}
@@ -104,6 +108,7 @@ public class TransactionManager implements Serializable
                 String record = "BEFORE_SENDING_REQUEST";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with BEFORE_SENDING_REQUEST and saved to disk");
                 if (crash_mode == 4) return selfDestruct(crash_mode);
                 // check rm_list
                 try {
@@ -119,6 +124,7 @@ public class TransactionManager implements Serializable
                             record = "SOME_REPLIED";
                             this.active_log.get(transactionId).record.add(record);
                             IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with SOME_REPLIED and saved to disk");
                             if (crash_mode == 5) return selfDestruct(crash_mode);
                         }
                     }
@@ -133,12 +139,13 @@ public class TransactionManager implements Serializable
                         else if (rm_num == ROOM_NUM) {
                             answers += this.rm_room.prepare(transactionId);
                         }
-                        if (!this.active_log.get(transactionId).record.contains("SOME_REPLIED"))
+                        if ((rm_num == FLIGHT_NUM || rm_num == CAR_NUM || rm_num == ROOM_NUM)&&(!this.active_log.get(transactionId).record.contains("SOME_REPLIED")))
                         {
                             java.lang.Thread.sleep(100);
                             record = "SOME_REPLIED";
                             this.active_log.get(transactionId).record.add(record);
                             IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                            Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with SOME_REPLIED and saved to disk");
                             if (crash_mode == 5) return selfDestruct(crash_mode);
                         }
                     }
@@ -146,6 +153,7 @@ public class TransactionManager implements Serializable
                     record = "AFTER_REPLIES_BEFORE_DECISION";
                     this.active_log.get(transactionId).record.add(record);
                     IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                    Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with AFTER_REPLIES_BEFORE_DECISION and saved to disk");
                     if (crash_mode == 6) return selfDestruct(crash_mode);
 
                     if (answers == rms.size())
@@ -153,14 +161,12 @@ public class TransactionManager implements Serializable
                         this.all_vote_yes.put(transactionId, true);
                         IOTools.saveToDisk(this, "TransactionManager.txt");
                         IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                        Trace.info("TM::Transaction Manager saved to disk");
                         java.lang.Thread.sleep(100);
                         record = "BEFORE_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
-                        // if (this.active_log.get(transactionId) == null) System.out.println("RECORD NULL");
-                        // else System.out.println("RECORD NOT NULL");
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
-                        // LogFile tmp = (LogFile) IOTools.loadFromDisk(tm_name + "_" + Integer.toString(transactionId) + ".log");
-                        // System.out.println("LogFile Size : " + tmp.record.size());
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with BEFORE_COMMIT and saved to disk");
                         if (crash_mode == 7) return selfDestruct(crash_mode);
 
                         for (int rm_num : rms)
@@ -227,19 +233,26 @@ public class TransactionManager implements Serializable
                                 record = "SOME_COMMITTED";
                                 this.active_log.get(transactionId).record.add(record);
                                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with SOME_COMMITTED and saved to disk");
                                 if (crash_mode == 8) return selfDestruct(crash_mode);
                             }
-
+                            else
+                            {
+                                if (crash_mode == 8) return selfDestruct(crash_mode);
+                            }
                         }
                         java.lang.Thread.sleep(100);
                         record = "AFTER_COMMIT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with AFTER_COMMIT and saved to disk");
                         if (crash_mode == 9) return selfDestruct(crash_mode);
                         this.active_txn.remove(transactionId);
                         IOTools.saveToDisk(this, "TransactionManager.txt");
                         IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                        Trace.info("TM::Transaction Manager saved to disk");
                         IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " deleted from disk");
                         this.active_log.remove(transactionId);
                     }
                     else
@@ -248,6 +261,7 @@ public class TransactionManager implements Serializable
                         record = "BEFORE_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with BEFORE_ABORT and saved to disk");
                         if (crash_mode == 7) return selfDestruct(crash_mode);
 
                         for (int rm_num : rms)
@@ -325,6 +339,7 @@ public class TransactionManager implements Serializable
                                 record = "SOME_ABORTED";
                                 this.active_log.get(transactionId).record.add(record);
                                 IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with SOME_ABORTED and saved to disk");
                                 if (crash_mode == 8) return selfDestruct(crash_mode);
                             }
                         }
@@ -332,11 +347,14 @@ public class TransactionManager implements Serializable
                         record = "AFTER_ABORT";
                         this.active_log.get(transactionId).record.add(record);
                         IOTools.saveToDisk(this.active_log.get(transactionId), tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with AFTER_ABORT and saved to disk");
                         if (crash_mode == 9) return selfDestruct(crash_mode);
                         this.active_txn.remove(transactionId);
                         IOTools.saveToDisk(this, "TransactionManager.txt");
                         IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                        Trace.info("TM::Transaction Manager saved to disk");
                         IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+                        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " deleted from disk");
                         this.active_log.remove(transactionId);
                         return false;
                     }
@@ -345,11 +363,6 @@ public class TransactionManager implements Serializable
                     // System.out.println("RM crashed : " + e.getMessage()); 
                     return false;
                 }
-                // this.active_txn.remove(transactionId);
-                // IOTools.saveToDisk(this, "TransactionManager.txt");
-                // IOTools.saveToDisk(this.active_txn, "TMActive.txt");
-                // IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
-                // this.active_log.remove(transactionId);
             }
         }
         return true;
@@ -368,6 +381,7 @@ public class TransactionManager implements Serializable
                 mw_locks.UnlockAll(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
                 IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                Trace.info("TM::Transaction Manager saved to disk");
                 try {
                     for (int rm_num : this.active_txn.get(transactionId).rm_list)
                     {
@@ -441,8 +455,10 @@ public class TransactionManager implements Serializable
                     }  
                 }
                 catch (Exception e) {}
+                try {java.lang.Thread.sleep(100);}
+                catch(Exception e) {}
                 this.active_txn.remove(transactionId);
-                // IOTools.saveToDisk(this, "TransactionManager.txt");                
+                IOTools.saveToDisk(this, "TransactionManager.txt");                
             }
         }
     }
@@ -460,9 +476,21 @@ public class TransactionManager implements Serializable
     {
         synchronized(this.active_txn) {
             if (!this.active_txn.isEmpty()) {
-                Trace.warn("TM::Shutdown failed--transaction active");
-                // System.out.println(this.active_txn.size());
-                return false;
+                Enumeration<Integer> e = this.active_txn.keys();
+                while (e.hasMoreElements())
+                {
+                    int id = e.nextElement();
+                    File f = new File("TM_" + id + ".log");
+                    if (f.exists())
+                    {
+                        Trace.warn("TM::Shutdown failed--transaction "+ id +" active");
+                        // System.out.println(this.active_txn.size());
+                        return false;
+                    }
+                    else {
+                        // this.active_txn.remove(id);
+                    }
+                }
             }
         }
         return true;

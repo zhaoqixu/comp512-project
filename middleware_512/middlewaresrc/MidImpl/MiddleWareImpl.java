@@ -869,6 +869,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
         }
         LogFile log = new LogFile(transactionId);
         this.active_log.put(transactionId, log);
+        IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");        
         Trace.info("CustomerRM::Transaction " + transactionId + " started to log");
         return transactionId;
     }
@@ -930,7 +931,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 Trace.info("CustomerRM::Master Record saved to disk");
 
                 try {java.lang.Thread.sleep(100);}
-                catch(Exception e) {}        
+                catch(Exception e) {}
                 record = "AFTER_COMMIT";
                 this.active_log.get(transactionId).record.add(record);
                 IOTools.saveToDisk(this.active_log.get(transactionId), customerRM + "_" + Integer.toString(transactionId) + ".log");                
@@ -944,10 +945,11 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                 if (!this.txn_manager.active_log.get(transactionId).record.contains("SOME_COMMITTED"))
                 {
                     try {java.lang.Thread.sleep(100);}
-                    catch(Exception e) {}  
+                    catch(Exception e) {}
                     record = "SOME_COMMITTED";
                     this.txn_manager.active_log.get(transactionId).record.add(record);
                     IOTools.saveToDisk(this.txn_manager.active_log.get(transactionId), "TM_" + Integer.toString(transactionId) + ".log");
+                    Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " updated with SOME_COMMITTED and saved to disk");
                 }
                 if (crash_mode == 3) return selfDestruct(crash_mode);
             }

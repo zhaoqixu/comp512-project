@@ -49,15 +49,15 @@ public class TransactionManager implements Serializable
 
     public void setFlightRM(ResourceManager rm)
     {
-        rm_flight = rm;
+        this.rm_flight = rm;
     }
     public void setCarRM(ResourceManager rm)
     {
-        rm_car = rm;
+        this.rm_car = rm;
     }
     public void setRoomRM(ResourceManager rm)
     {
-        rm_room = rm;
+        this.rm_room = rm;
     }
     public void setMW(MiddleWare mw)
     {
@@ -92,6 +92,7 @@ public class TransactionManager implements Serializable
     {
         synchronized(this.active_txn) {
             if (transactionId < 1 || !this.active_txn.containsKey(transactionId)) {
+                // System.out.println("Size of AT: " + this.active_txn.size());
                 Trace.warn("TM::Commit failed--Invalid transactionId");
                 throw new InvalidTransactionException(transactionId);
             }
@@ -177,7 +178,7 @@ public class TransactionManager implements Serializable
                                 } catch (Exception e) {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Middleware Crashed");
+                                        Trace.warn("TM::Customer RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -191,7 +192,7 @@ public class TransactionManager implements Serializable
                                 } catch (Exception e) {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Flight RM Crashed");
+                                        Trace.warn("TM::Flight RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -205,7 +206,7 @@ public class TransactionManager implements Serializable
                                 } catch (Exception e) {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Car RM Crashed");
+                                        Trace.warn("TM::Car RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -219,7 +220,7 @@ public class TransactionManager implements Serializable
                                 } catch (Exception e) {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Room RM Crashed");
+                                        Trace.warn("TM::Room RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -274,7 +275,7 @@ public class TransactionManager implements Serializable
                                 {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Middleware Crashed");
+                                        Trace.warn("TM::Customer RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -291,7 +292,7 @@ public class TransactionManager implements Serializable
                                 {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Flight RM Crashed");
+                                        Trace.warn("TM::Flight RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -308,7 +309,7 @@ public class TransactionManager implements Serializable
                                 {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Car RM Crashed");
+                                        Trace.warn("TM::Car RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -325,7 +326,7 @@ public class TransactionManager implements Serializable
                                 {
                                     if (e instanceof ConnectException) 
                                     {
-                                        System.out.println("Room RM Crashed");
+                                        Trace.warn("TM::Room RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
@@ -368,6 +369,77 @@ public class TransactionManager implements Serializable
         return true;
     }
 
+    public void commit_recovery(int transactionId)
+        throws RemoteException, TransactionAbortedException, InvalidTransactionException
+    {
+        HashSet<Integer> rms = this.active_txn.get(transactionId).rm_list;
+        for (int rm_num : rms)
+        {
+            if (rm_num == MW_NUM) {
+                try {
+                    this.mw.local_commit(transactionId);
+                } catch (Exception e) {
+                    if (e instanceof ConnectException) 
+                    {
+                        Trace.warn("TM::Customer RM Crashed");
+                    }
+                    if (e instanceof InvalidTransactionException)
+                    {
+                        Trace.warn("TM::Customer RM already committed");
+                    }
+                }
+            }
+            else if (rm_num == FLIGHT_NUM) {
+                try {
+                    this.rm_flight.commit(transactionId);
+                } catch (Exception e) {
+                    if (e instanceof ConnectException) 
+                    {
+                        Trace.warn("TM::Flight RM Crashed");
+                    }
+                    if (e instanceof InvalidTransactionException)
+                    {
+                        Trace.warn("TM::Flight RM already committed");
+                    }
+                }
+            }
+            else if (rm_num == CAR_NUM) {
+                try{
+                    this.rm_car.commit(transactionId);
+                } catch (Exception e) {
+                    if (e instanceof ConnectException) 
+                    {
+                        Trace.warn("TM::Car RM Crashed");
+                    }
+                    if (e instanceof InvalidTransactionException)
+                    {
+                        Trace.warn("TM::Car RM already committed");
+                    }
+                }
+            }
+            else {
+                try {
+                    this.rm_room.commit(transactionId);
+                } catch (Exception e) {
+                    if (e instanceof ConnectException) 
+                    {
+                        Trace.warn("TM::Room RM Crashed");
+                    }
+                    if (e instanceof InvalidTransactionException)
+                    {
+                        Trace.warn("TM::Room RM already committed");
+                    }
+                }
+            }
+        }
+        this.active_txn.remove(transactionId);
+        IOTools.saveToDisk(this, "TransactionManager.txt");
+        IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+        Trace.info("TM::Transaction Manager saved to disk");
+        IOTools.deleteFile(tm_name + "_" + Integer.toString(transactionId) + ".log");
+        Trace.info("TM::Transaction Manager log at committing transaction " + transactionId + " deleted from disk");
+        this.active_log.remove(transactionId);
+    }
     public void abort(int transactionId) throws RemoteException, InvalidTransactionException
     {
         synchronized(this.active_txn) {
@@ -389,12 +461,13 @@ public class TransactionManager implements Serializable
                         {
                             try {
                                 this.rm_flight.abort(transactionId);
+                                Trace.info("TM::Transaction " + transactionId + " on Flight RM aborted");
                             }
                             catch (Exception e)
                             {
                                 if (e instanceof ConnectException) 
                                 {
-                                    System.out.println("Flight RM Crashed");
+                                    Trace.warn("TM::Flight RM Crashed");
                                 }
                                 if (e instanceof InvalidTransactionException)
                                 {
@@ -406,12 +479,13 @@ public class TransactionManager implements Serializable
                         {
                             try {
                                 this.rm_car.abort(transactionId);
+                                Trace.info("TM::Transaction " + transactionId + " on Car RM aborted");
                             }
                             catch (Exception e)
                             {
                                 if (e instanceof ConnectException) 
                                 {
-                                    System.out.println("Car RM Crashed");
+                                    Trace.warn("TM::Car RM Crashed");
                                 }
                                 if (e instanceof InvalidTransactionException)
                                 {
@@ -423,12 +497,13 @@ public class TransactionManager implements Serializable
                         {
                             try {
                                 this.rm_room.abort(transactionId);
+                                Trace.info("TM::Transaction " + transactionId + " on Room RM aborted");
                             }
                             catch (Exception e)
                             {
                                 if (e instanceof ConnectException) 
                                 {
-                                    System.out.println("Room RM Crashed");
+                                    Trace.warn("TM::Room RM Crashed");
                                 }
                                 if (e instanceof InvalidTransactionException)
                                 {
@@ -440,12 +515,13 @@ public class TransactionManager implements Serializable
                     if (this.active_txn.get(transactionId).rm_list.contains(MW_NUM)) {
                         try {
                             this.mw.local_abort(transactionId);
+                            Trace.info("TM::Transaction " + transactionId + " on Customer RM aborted");
                         }
                         catch (Exception e)
                         {
                             if (e instanceof ConnectException) 
                             {
-                                System.out.println("Middleware Crashed");
+                                Trace.warn("TM::Customer RM Crashed");
                             }
                             if (e instanceof InvalidTransactionException)
                             {
@@ -503,7 +579,6 @@ public class TransactionManager implements Serializable
             t.op_count++;
             this.active_txn.put(xid, t);
         }
-        //System.out.println(active_txn.get(xid).op_count);
         int rm_num = 0;
         switch (strData.charAt(0)) {
             case 'c':
@@ -523,9 +598,15 @@ public class TransactionManager implements Serializable
             if (mw_locks.Lock(xid, strData, lockType))
             {
                 enlist(xid, rm_num);
+                IOTools.saveToDisk(this, "TransactionManager.txt");
+                IOTools.saveToDisk(this.active_txn, "TMActive.txt");
                 return true;
             }
-            else return false;
+            else {
+                IOTools.saveToDisk(this, "TransactionManager.txt");
+                IOTools.saveToDisk(this.active_txn, "TMActive.txt");
+                return false;
+            }
         }
         catch (DeadlockException dle) {
             Trace.warn("TM::Lock failed--Deadlock exist");

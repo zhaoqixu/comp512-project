@@ -6,6 +6,7 @@ import java.rmi.registry.Registry;
 import java.rmi.ConnectException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
+import java.rmi.UnmarshalException;
 import java.util.*;
 import java.io.*;
 
@@ -781,13 +782,31 @@ public class client
             try{
             Id=obj.getInt(arguments.elementAt(1));
             try {
-            boolean committed=mw.commit(Id);
-            if (committed) {
+            // boolean committed=mw.commit(Id);
+            if (mw.commit(Id)) {
                 obj.txn_ids.remove(Id);
                 System.out.println("Transaction ID :"+Id+" committed");
             }
             else {
-                System.out.println("Commit failed");
+                try {
+                    java.lang.Thread.sleep(100);
+                    mw.reserveItinerary();
+                    System.out.println("Commit failed");
+                }
+                catch (Exception e)
+                {
+                    if (e instanceof ConnectException) {
+                        System.out.println("Server crashed");
+                        System.out.println("Client restart required");
+                        System.out.println("Quitting client...");
+                        System.exit(1);
+                    }
+                    else {
+                        System.out.println("EXCEPTION:");
+                        System.out.println(e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
             }
             }
             catch (NullPointerException npe) {
@@ -797,15 +816,18 @@ public class client
             }
             }
             catch(Exception e){
-            // System.out.println("EXCEPTION:");
-            // System.out.println(e.getMessage());
-            // e.printStackTrace();
-            if (e instanceof ConnectException) {
-                System.out.println("Commit failed, server crashed");
-                System.out.println("Client restart required");
-                System.out.println("Quitting client...");
-                System.exit(1);
-            }
+                if (e instanceof ConnectException || e instanceof UnmarshalException) {
+                    System.out.println("Server crashed");
+                    System.out.println("Client restart required");
+                    System.out.println("Quitting client...");
+                    System.exit(1);
+                }
+                else{
+                    System.out.println("EXCEPTION:");
+                    System.out.println(e.getClass().getCanonicalName());
+                    System.out.println(e.getMessage());
+                    // e.printStackTrace();
+                }
             }
             break;
 
@@ -829,15 +851,18 @@ public class client
             }
             }
             catch(Exception e){
-                if (e instanceof ConnectException) {
-                    System.out.println("Abort failed, server crashed");
+                if (e instanceof ConnectException || e instanceof UnmarshalException) {
+                    System.out.println("Server crashed");
                     System.out.println("Client restart required");
                     System.out.println("Quitting client...");
                     System.exit(1);
                 }
-            System.out.println("EXCEPTION:");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+                else{
+                    System.out.println("EXCEPTION:");
+                    System.out.println(e.getClass().getCanonicalName());
+                    System.out.println(e.getMessage());
+                    // e.printStackTrace();
+                }
             }
             break;
 

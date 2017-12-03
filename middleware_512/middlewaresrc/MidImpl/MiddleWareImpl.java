@@ -850,7 +850,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             }
     }
 
-    public boolean reserveItinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
+    public boolean reserveItinerary()
         throws RemoteException
     {
         return false;
@@ -1295,7 +1295,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                             } else if (log.record.size() == 5) {
                                 // crash mode 8
                                 if (log.record.contains("SOME_COMMITTED")) {
-                                    commit(transactionId);
+                                    txn_manager.commit_recovery(transactionId);
                                     Trace.info("MW::Transaction " + transactionId + " commited");
                                 } else {
                                     abort(transactionId);

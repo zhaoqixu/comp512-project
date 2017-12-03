@@ -1088,15 +1088,20 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                                 Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
-                            } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                // IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
-                                // Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
-                                // IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
-                                // Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
-                                // this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 1) {
+                                Trace.info("RM::Aborting transaction : " + transactionId);                                
+                                IOTools.deleteFile("CarRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
+                                IOTools.deleteFile("CarRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                            } else if (log.record.size() == 0) {
                                 this.active_txn.remove(transactionId);
                                 mw.abort(transactionId);
-                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                                Trace.info("RM::Transaction " + transactionId + " aborted");
                             }
                         }
                     }
@@ -1132,15 +1137,20 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                                 Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
-                            } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                // IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
-                                // Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
-                                // IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
-                                // Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
-                                // this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 1) {
+                                Trace.info("RM::Aborting transaction : " + transactionId);                                
+                                IOTools.deleteFile("FlightRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
+                                IOTools.deleteFile("FlightRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                            } else if (log.record.size() == 0) {
                                 this.active_txn.remove(transactionId);
                                 mw.abort(transactionId);
-                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                                Trace.info("RM::Transaction " + transactionId + " aborted");
                             }
                         }
                     }
@@ -1176,15 +1186,20 @@ public class ResourceManagerImpl implements ResourceManager
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                                 Trace.info("RM::Transaction " + transactionId + " history recovered from disk");
-                            } else if (log.record.size() == 1 || log.record.size() == 0) {
-                                // IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
-                                // Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
-                                // IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
-                                // Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
-                                // this.active_log.remove(transactionId);
+                            } else if (log.record.size() == 1) {
+                                Trace.info("RM::Aborting transaction : " + transactionId);                                
+                                IOTools.deleteFile("RoomRM_WS_" + Integer.toString(transactionId) + ".txt");
+                                Trace.info("RM::Transaction " + transactionId + " working set deleted from disk");
+                                IOTools.deleteFile("RoomRM" + "_" + Integer.toString(transactionId) + ".log");
+                                Trace.info("RM::Transaction " + transactionId + " log deleted from disk");
+                                this.active_log.remove(transactionId);
+                                this.active_txn.remove(transactionId);
+                                mw.removeTransactionId(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                            } else if (log.record.size() == 0) {
                                 this.active_txn.remove(transactionId);
                                 mw.abort(transactionId);
-                                Trace.info("RM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                                Trace.info("RM::Transaction " + transactionId + " aborted");
                             }
                         }
                     }
@@ -1224,7 +1239,7 @@ public class ResourceManagerImpl implements ResourceManager
             {
                 int customer = Integer.parseInt(v.get(1));
                 // freeItemRes(transactionId, customer, v.get(2), 1, true);
-                reserveCar(transactionId, customer, v.get(2));
+                reserveCar(transactionId, customer, v.get(3));
             }
             else if (v.get(0).equals("newroom"))
             {
@@ -1240,7 +1255,7 @@ public class ResourceManagerImpl implements ResourceManager
             {
                 int customer = Integer.parseInt(v.get(1));
                 // freeItemRes(transactionId, customer, v.get(2), 1, true);
-                reserveRoom(transactionId, customer, v.get(2));
+                reserveRoom(transactionId, customer, v.get(3));
             }
             else if (v.get(0).equals("newflight"))
             {
@@ -1256,7 +1271,7 @@ public class ResourceManagerImpl implements ResourceManager
             {
                 int customer = Integer.parseInt(v.get(1));
                 // freeItemRes(transactionId, customer, v.get(2), 1, true);
-                reserveFlight(transactionId, customer, Integer.parseInt(v.get(2)));
+                reserveFlight(transactionId, customer, Integer.parseInt(v.get(3)));
             }
             else if (v.get(0).equals("freeitemres"))
             {

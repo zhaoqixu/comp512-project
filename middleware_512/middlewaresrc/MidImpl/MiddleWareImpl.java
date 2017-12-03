@@ -1362,7 +1362,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                     this.recover_history(transactionId);
                                 } else this.commit_no_crash(transactionId);
                                 Trace.info("CustomerRM::Transaction " + transactionId + " history recovered from disk");
-                            } else if (log.record.size() == 1 || log.record.size() == 0) {
+                            } else if (log.record.size() == 1) {
                                 txn_manager.abort(transactionId);
                                 Trace.info("CustomerRM::Transaction " + transactionId + " aborted");
                                 IOTools.deleteFile("TripMiddleWare_WS_" + Integer.toString(transactionId) + ".txt");
@@ -1373,6 +1373,10 @@ public class MiddleWareImpl implements MiddleWare, Serializable
                                 this.active_txn.remove(transactionId);
                                 this.removeTransactionId(transactionId);
                                 Trace.info("CustomerRM::Transaction " + transactionId + " removed from active transactions in Transaction Manager");
+                            } else if (log.record.size() == 0) {
+                                this.active_txn.remove(transactionId);
+                                abort(transactionId);
+                                Trace.info("RM::Transaction " + transactionId + " aborted");
                             }
                         }
                     }

@@ -809,7 +809,7 @@ public class client
                 }
             }
             }
-            catch (NullPointerException npe) {
+            catch (NullPointerException | InvalidTransactionException npe) {
                 System.out.println("Can not find ID "+ Id + " on middleware.");
                 System.out.println("Updating active transaction IDs ...");
                 obj.txn_ids.remove(Id);
@@ -844,7 +844,7 @@ public class client
             obj.txn_ids.remove(Id);
             System.out.println("Transaction ID :"+Id+" aborted");
             }
-            catch (NullPointerException npe) {
+            catch (NullPointerException | InvalidTransactionException npe) {
                 System.out.println("Can not find ID "+ Id + " on middleware.");
                 System.out.println("Updating active transaction IDs ...");
                 obj.txn_ids.remove(Id);

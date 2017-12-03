@@ -13,6 +13,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.ConnectException;
 import java.rmi.RMISecurityManager;
+import java.rmi.UnmarshalException;
 
 
 public class TransactionManager implements Serializable
@@ -176,13 +177,13 @@ public class TransactionManager implements Serializable
                                 try {
                                     this.mw.local_commit(transactionId);
                                 } catch (Exception e) {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Customer RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
-                                        System.out.println(e.getMessage());
+                                        Trace.warn("TM::Transaction " + transactionId + " already committed");
                                     }
                                 }
                             }
@@ -190,13 +191,13 @@ public class TransactionManager implements Serializable
                                 try {
                                     this.rm_flight.commit(transactionId);
                                 } catch (Exception e) {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Flight RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
-                                        System.out.println(e.getMessage());
+                                        Trace.warn("TM::Transaction " + transactionId + " already committed");
                                     }
                                 }
                             }
@@ -204,13 +205,13 @@ public class TransactionManager implements Serializable
                                 try{
                                     this.rm_car.commit(transactionId);
                                 } catch (Exception e) {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Car RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
-                                        System.out.println(e.getMessage());
+                                        Trace.warn("TM::Transaction " + transactionId + " already committed");
                                     }
                                 }
                             }
@@ -218,13 +219,13 @@ public class TransactionManager implements Serializable
                                 try {
                                     this.rm_room.commit(transactionId);
                                 } catch (Exception e) {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Room RM Crashed");
                                     }
                                     if (e instanceof InvalidTransactionException)
                                     {
-                                        System.out.println(e.getMessage());
+                                        Trace.warn("TM::Transaction " + transactionId + " already committed");
                                     }
                                 }
                             }
@@ -273,7 +274,7 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Customer RM Crashed");
                                     }
@@ -290,7 +291,7 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Flight RM Crashed");
                                     }
@@ -307,7 +308,7 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Car RM Crashed");
                                     }
@@ -324,7 +325,7 @@ public class TransactionManager implements Serializable
                                 }
                                 catch (Exception e)
                                 {
-                                    if (e instanceof ConnectException) 
+                                    if (e instanceof ConnectException || e instanceof UnmarshalException) 
                                     {
                                         Trace.warn("TM::Room RM Crashed");
                                     }
@@ -534,7 +535,8 @@ public class TransactionManager implements Serializable
                 try {java.lang.Thread.sleep(100);}
                 catch(Exception e) {}
                 this.active_txn.remove(transactionId);
-                IOTools.saveToDisk(this, "TransactionManager.txt");                
+                IOTools.saveToDisk(this, "TransactionManager.txt");
+                IOTools.deleteFile("TM_" + transactionId + ".log");  
             }
         }
     }

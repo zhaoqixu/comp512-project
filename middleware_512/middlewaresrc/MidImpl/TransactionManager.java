@@ -536,6 +536,7 @@ public class TransactionManager implements Serializable
                 catch(Exception e) {}
                 this.active_txn.remove(transactionId);
                 IOTools.saveToDisk(this, "TransactionManager.txt");
+                IOTools.saveToDisk(this.active_txn, "TMActive.txt");
                 IOTools.deleteFile("TM_" + transactionId + ".log");  
             }
         }
@@ -566,10 +567,12 @@ public class TransactionManager implements Serializable
                         return false;
                     }
                     else {
-                        // this.active_txn.remove(id);
+                        this.active_txn.remove(id);
                     }
                 }
             }
+            IOTools.saveToDisk(this, "TransactionManager.txt");
+            IOTools.saveToDisk(this.active_txn, "TMActive.txt");
         }
         return true;
     }

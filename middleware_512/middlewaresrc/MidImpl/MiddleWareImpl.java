@@ -117,7 +117,7 @@ public class MiddleWareImpl implements MiddleWare, Serializable
             if (file.exists()) {
                 obj.txn_manager = (TransactionManager) IOTools.loadFromDisk("TransactionManager.txt");
                 obj.txn_manager.active_txn = (Hashtable<Integer,Transaction>) IOTools.loadFromDisk("TMActive.txt");
-                System.out.println("Size of TM active transaction " + obj.txn_manager.active_txn.size());
+                // System.out.println("Size of TM active transaction " + obj.txn_manager.active_txn.size());
                 System.out.println("Transaction manager loaded");
                 obj.txn_manager.setMW(obj);
                 obj.txn_manager.setCrashMode(0);
